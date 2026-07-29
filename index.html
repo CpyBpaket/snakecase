@@ -17,6 +17,9 @@
       --text-main: #111827;
       --text-sub: #6b7280;
       --badge-bg: #eef5ff;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
     }
 
     * {
@@ -36,6 +39,7 @@
       overflow: hidden;
     }
 
+    /* Хедер */
     .header {
       display: flex;
       justify-content: space-between;
@@ -95,8 +99,10 @@
       color: var(--text-sub);
       font-size: 16px;
       cursor: pointer;
+      position: relative;
     }
 
+    /* Контент страниц */
     .content {
       flex: 1;
       overflow-y: auto;
@@ -186,17 +192,19 @@
       font-weight: 700;
       font-size: 14px;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: background 0.2s, transform 0.1s;
     }
 
     .btn-action:active {
       background: var(--primary-hover);
+      transform: scale(0.96);
     }
 
     .btn-action.done {
       background: #e5e7eb;
       color: #9ca3af;
       cursor: default;
+      transform: none;
     }
 
     .ref-reward-box {
@@ -239,6 +247,11 @@
       border-radius: 12px;
       font-size: 16px;
       cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .btn-copy:active {
+      transform: scale(0.95);
     }
 
     .stats-grid {
@@ -299,6 +312,11 @@
       font-size: 16px;
       cursor: pointer;
       margin-top: 10px;
+      transition: transform 0.1s;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
     }
 
     .nav-bar {
@@ -335,9 +353,95 @@
     .nav-item.active {
       color: var(--primary);
     }
+
+    /* -------------------------------------------
+       СТИЛИ КРАСИВЫХ ВС Node/Toast УВЕДОМЛЕНИЙ
+    ------------------------------------------- */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      width: calc(100% - 32px);
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: #ffffff;
+      padding: 14px 18px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .toast.hide {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.9);
+    }
+
+    .toast-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .toast.success .toast-icon {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .toast.error .toast-icon {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+    }
+
+    .toast.warning .toast-icon {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    .toast-content {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text-main);
+      margin-bottom: 2px;
+    }
+
+    .toast-message {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
   </style>
 </head>
 <body>
+
+  <!-- Контейнер для всплывающих уведомлений -->
+  <div id="toast-container"></div>
 
   <!-- Верхняя панель -->
   <div class="header">
@@ -348,7 +452,9 @@
         <div class="balance">$<span id="userBalance">0.00</span> <i class="fa-solid fa-coins currency-icon"></i></div>
       </div>
     </div>
-    <button class="notification-btn"><i class="fa-regular fa-bell"></i></button>
+    <button class="notification-btn" onclick="showNotification('Информация', 'У вас нет новых системных сообщений', 'warning')">
+      <i class="fa-regular fa-bell"></i>
+    </button>
   </div>
 
   <!-- Контент страниц -->
@@ -464,6 +570,44 @@
       document.getElementById('refLink').value = `https://t.me/${botUsername}?start=${user.id}`;
     }
 
+    // Функция отрисовки кастомных всплывающих уведомлений
+    function showNotification(title, message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      let iconClass = 'fa-check';
+      if (type === 'error') iconClass = 'fa-xmark';
+      if (type === 'warning') iconClass = 'fa-exclamation';
+
+      toast.innerHTML = `
+        <div class="toast-icon">
+          <i class="fa-solid ${iconClass}"></i>
+        </div>
+        <div class="toast-content">
+          <div class="toast-title">${title}</div>
+          <div class="toast-message">${message}</div>
+        </div>
+      `;
+
+      container.appendChild(toast);
+
+      // Запуск анимации появления
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 10);
+
+      // Автоматическое скрытие через 3.5 секунды
+      setTimeout(() => {
+        toast.classList.remove('show');
+        toast.classList.add('hide');
+        setTimeout(() => {
+          toast.remove();
+        }, 350);
+      }, 3500);
+    }
+
     function switchTab(pageId, element) {
       document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -489,11 +633,8 @@
         btn.innerText = "Done";
         btn.classList.add('done');
         
-        if (tg?.showAlert) {
-          tg.showAlert("Задание выполнено! Вам начислено +$2.00");
-        } else {
-          alert("Задание выполнено! Вам начислено +$2.00");
-        }
+        // Красивое уведомление о начислении средств
+        showNotification("Успешно!", "Задание выполнено! Вам начислено +$2.00", "success");
       }, 3000);
     }
 
@@ -502,11 +643,8 @@
       copyText.select();
       navigator.clipboard.writeText(copyText.value);
       
-      if (tg?.showAlert) {
-        tg.showAlert("Ссылка скопирована!");
-      } else {
-        alert("Ссылка скопирована!");
-      }
+      // Уведомление о копировании
+      showNotification("Ссылка скопирована", "Отправьте её другу, чтобы получить бонус!", "success");
     }
 
     function requestWithdraw() {
@@ -514,21 +652,21 @@
       const wallet = document.getElementById('walletInput').value;
 
       if (!wallet) {
-        alert("Укажите адрес кошелька!");
+        showNotification("Ошибка", "Укажите адрес кошелька USDT!", "error");
         return;
       }
 
       if (isNaN(amount) || amount < 10) {
-        alert("Минимальная сумма вывода $10.00");
+        showNotification("Ограничение", "Минимальная сумма вывода составляет $10.00", "warning");
         return;
       }
 
       if (amount > balance) {
-        alert("Недостаточно средств на балансе!");
+        showNotification("Ошибка вывода", "Недостаточно средств на вашем балансе!", "error");
         return;
       }
 
-      alert("Заявка на вывод успешно отправлена!");
+      showNotification("Заявка создана", "Ваш запрос на вывод средств отправлен на обработку!", "success");
     }
   </script>
 </body>
