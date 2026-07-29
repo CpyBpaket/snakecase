@@ -354,9 +354,7 @@
       color: var(--primary);
     }
 
-    /* -------------------------------------------
-       СТИЛИ КРАСИВЫХ ВС Node/Toast УВЕДОМЛЕНИЙ
-    ------------------------------------------- */
+    /* Всплывающие уведомления */
     #toast-container {
       position: fixed;
       top: 16px;
@@ -440,7 +438,6 @@
 </head>
 <body>
 
-  <!-- Контейнер для всплывающих уведомлений -->
   <div id="toast-container"></div>
 
   <!-- Верхняя панель -->
@@ -460,7 +457,7 @@
   <!-- Контент страниц -->
   <div class="content">
     
-    <!-- 1. Вкладка ЗАДАНИЯ -->
+    <!-- 1. ЗАДАНИЯ -->
     <div id="page-tasks" class="page active">
       <h1 class="page-title">Tasks</h1>
       <p class="page-subtitle">Complete tasks and earn rewards</p>
@@ -480,7 +477,7 @@
       </div>
     </div>
 
-    <!-- 2. Вкладка РЕФЕРАЛЫ -->
+    <!-- 2. РЕФЕРАЛЫ -->
     <div id="page-refer" class="page">
       <h1 class="page-title">Refer & Earn</h1>
       <p class="page-subtitle">Invite friends and earn more rewards</p>
@@ -512,7 +509,7 @@
       </div>
     </div>
 
-    <!-- 3. Вкладка ВЫПЛАТЫ -->
+    <!-- 3. ВЫПЛАТЫ -->
     <div id="page-withdraw" class="page">
       <h1 class="page-title">Withdraw</h1>
       <p class="page-subtitle">Transfer your earnings to your wallet</p>
@@ -559,21 +556,40 @@
       tg.expand();
     }
 
-    let balance = 0.00;
     const channelLink = "https://t.me/+5iLuHR-4a2sxZTEy";
     const botUsername = "Kokosroboty_bot";
-
-    // Установка данных пользователя из Telegram WebApp
+    
+    // Получаем ID пользователя, если его нет — используем 'guest' (для тестов в браузере)
+    let userId = 'guest';
     if (tg?.initDataUnsafe?.user) {
       const user = tg.initDataUnsafe.user;
+      userId = user.id;
       document.getElementById('userName').innerText = user.first_name || "User";
       document.getElementById('refLink').value = `https://t.me/${botUsername}?start=${user.id}`;
     }
 
-    // Функция отрисовки кастомных всплывающих уведомлений
+    // --- ЛОГИКА СОХРАНЕНИЯ (LocalStorage) ---
+    // Создаем уникальные ключи сохранения для каждого пользователя
+    const storageKeyBalance = `kokos_balance_${userId}`;
+    const storageKeyTask = `kokos_task_done_${userId}`;
+
+    // Загружаем данные из памяти при запуске
+    let balance = parseFloat(localStorage.getItem(storageKeyBalance)) || 0.00;
+    let isTaskDone = localStorage.getItem(storageKeyTask) === 'true';
+
+    // Обновляем интерфейс загруженными данными
+    document.getElementById('userBalance').innerText = balance.toFixed(2);
+
+    // Если задание уже было выполнено ранее, меняем кнопку сразу при загрузке
+    if (isTaskDone) {
+      const btn = document.getElementById('taskBtn');
+      btn.innerText = "Done";
+      btn.classList.add('done');
+    }
+
+    // Функция красивых уведомлений
     function showNotification(title, message, type = 'success') {
       const container = document.getElementById('toast-container');
-      
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
 
@@ -593,29 +609,23 @@
 
       container.appendChild(toast);
 
-      // Запуск анимации появления
-      setTimeout(() => {
-        toast.classList.add('show');
-      }, 10);
-
-      // Автоматическое скрытие через 3.5 секунды
+      setTimeout(() => toast.classList.add('show'), 10);
       setTimeout(() => {
         toast.classList.remove('show');
         toast.classList.add('hide');
-        setTimeout(() => {
-          toast.remove();
-        }, 350);
+        setTimeout(() => toast.remove(), 350);
       }, 3500);
     }
 
+    // Переключение вкладок
     function switchTab(pageId, element) {
       document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-
       document.getElementById(`page-${pageId}`).classList.add('active');
       element.classList.add('active');
     }
 
+    // Выполнение задания с СОХРАНЕНИЕМ
     function completeTask() {
       const btn = document.getElementById('taskBtn');
       if (btn.classList.contains('done')) return;
@@ -628,25 +638,32 @@
 
       btn.innerText = "Checking...";
       setTimeout(() => {
+        // Увеличиваем баланс и меняем статус
         balance += 2.00;
+        isTaskDone = true;
+
+        // СОХРАНЯЕМ В ПАМЯТЬ
+        localStorage.setItem(storageKeyBalance, balance.toFixed(2));
+        localStorage.setItem(storageKeyTask, 'true');
+
+        // Обновляем визуал
         document.getElementById('userBalance').innerText = balance.toFixed(2);
         btn.innerText = "Done";
         btn.classList.add('done');
         
-        // Красивое уведомление о начислении средств
         showNotification("Успешно!", "Задание выполнено! Вам начислено +$2.00", "success");
       }, 3000);
     }
 
+    // Копирование ссылки
     function copyLink() {
       const copyText = document.getElementById("refLink");
       copyText.select();
       navigator.clipboard.writeText(copyText.value);
-      
-      // Уведомление о копировании
       showNotification("Ссылка скопирована", "Отправьте её другу, чтобы получить бонус!", "success");
     }
 
+    // Запрос на вывод
     function requestWithdraw() {
       const amount = parseFloat(document.getElementById('amountInput').value);
       const wallet = document.getElementById('walletInput').value;
