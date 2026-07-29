@@ -559,7 +559,6 @@
     const channelLink = "https://t.me/+5iLuHR-4a2sxZTEy";
     const botUsername = "Kokosroboty_bot";
     
-    // Получаем ID пользователя, если его нет — используем 'guest' (для тестов в браузере)
     let userId = 'guest';
     if (tg?.initDataUnsafe?.user) {
       const user = tg.initDataUnsafe.user;
@@ -568,43 +567,35 @@
       document.getElementById('refLink').value = `https://t.me/${botUsername}?start=${user.id}`;
     }
 
-    // Создаем уникальные ключи сохранения для каждого пользователя
-    const storageKeyBalance = `kokos_balance_${userId}`;
     const storageKeyTask = `kokos_task_done_${userId}`;
 
-    // Читаем данные, которые передал Python-бот через ссылку
+    // Читаем рефералов из ссылки от бота
     const urlParams = new URLSearchParams(window.location.search);
-    const botBalance = urlParams.has('balance') ? parseFloat(urlParams.get('balance')) : null;
     const botRefs = urlParams.has('refs') ? parseInt(urlParams.get('refs')) : 0;
 
-    let balance = 0.00;
-    
-    // Если бот передал баланс, используем его (база данных в приоритете)
-    if (botBalance !== null) {
-      balance = botBalance;
-      // Сохраняем актуальный баланс от бота в память телефона
-      localStorage.setItem(storageKeyBalance, balance.toFixed(2));
-    } else {
-      // Иначе берем из памяти
-      balance = parseFloat(localStorage.getItem(storageKeyBalance)) || 0.00;
-    }
+    // Считаем реферальный доход
+    const refEarnings = botRefs * 2.0;
 
-    // Обновляем статистику на странице
-    document.getElementById('totalRefs').innerText = botRefs;
-    document.getElementById('activeRefs').innerText = botRefs;
-    document.getElementById('totalEarned').innerText = '$' + (botRefs * 2).toFixed(2);
-    document.getElementById('userBalance').innerText = balance.toFixed(2);
-
+    // Проверяем выполнение задания из памяти
+    let taskEarnings = 0.0;
     let isTaskDone = localStorage.getItem(storageKeyTask) === 'true';
-
-    // Если задание уже было выполнено ранее, меняем кнопку сразу при загрузке
+    
     if (isTaskDone) {
+      taskEarnings = 2.0;
       const btn = document.getElementById('taskBtn');
       btn.innerText = "Done";
       btn.classList.add('done');
     }
 
-    // Функция красивых уведомлений
+    // Итоговый баланс (Рефералы + Задания)
+    let totalBalance = refEarnings + taskEarnings;
+
+    // Обновляем интерфейс
+    document.getElementById('totalRefs').innerText = botRefs;
+    document.getElementById('activeRefs').innerText = botRefs;
+    document.getElementById('totalEarned').innerText = '$' + refEarnings.toFixed(2);
+    document.getElementById('userBalance').innerText = totalBalance.toFixed(2);
+
     function showNotification(title, message, type = 'success') {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
@@ -634,7 +625,6 @@
       }, 3500);
     }
 
-    // Переключение вкладок
     function switchTab(pageId, element) {
       document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -642,7 +632,6 @@
       element.classList.add('active');
     }
 
-    // Выполнение задания с СОХРАНЕНИЕМ
     function completeTask() {
       const btn = document.getElementById('taskBtn');
       if (btn.classList.contains('done')) return;
@@ -655,16 +644,11 @@
 
       btn.innerText = "Checking...";
       setTimeout(() => {
-        // Увеличиваем баланс и меняем статус
-        balance += 2.00;
-        isTaskDone = true;
-
-        // СОХРАНЯЕМ В ПАМЯТЬ
-        localStorage.setItem(storageKeyBalance, balance.toFixed(2));
         localStorage.setItem(storageKeyTask, 'true');
-
-        // Обновляем визуал
-        document.getElementById('userBalance').innerText = balance.toFixed(2);
+        
+        totalBalance += 2.0;
+        document.getElementById('userBalance').innerText = totalBalance.toFixed(2);
+        
         btn.innerText = "Done";
         btn.classList.add('done');
         
@@ -672,7 +656,6 @@
       }, 3000);
     }
 
-    // Копирование ссылки
     function copyLink() {
       const copyText = document.getElementById("refLink");
       copyText.select();
@@ -680,7 +663,6 @@
       showNotification("Ссылка скопирована", "Отправьте её другу, чтобы получить бонус!", "success");
     }
 
-    // Запрос на вывод
     function requestWithdraw() {
       const amount = parseFloat(document.getElementById('amountInput').value);
       const wallet = document.getElementById('walletInput').value;
@@ -695,7 +677,7 @@
         return;
       }
 
-      if (amount > balance) {
+      if (amount > totalBalance) {
         showNotification("Ошибка вывода", "Недостаточно средств на вашем балансе!", "error");
         return;
       }
