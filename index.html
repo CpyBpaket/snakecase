@@ -568,17 +568,34 @@
       document.getElementById('refLink').value = `https://t.me/${botUsername}?start=${user.id}`;
     }
 
-    // --- ЛОГИКА СОХРАНЕНИЯ (LocalStorage) ---
     // Создаем уникальные ключи сохранения для каждого пользователя
     const storageKeyBalance = `kokos_balance_${userId}`;
     const storageKeyTask = `kokos_task_done_${userId}`;
 
-    // Загружаем данные из памяти при запуске
-    let balance = parseFloat(localStorage.getItem(storageKeyBalance)) || 0.00;
-    let isTaskDone = localStorage.getItem(storageKeyTask) === 'true';
+    // Читаем данные, которые передал Python-бот через ссылку
+    const urlParams = new URLSearchParams(window.location.search);
+    const botBalance = urlParams.has('balance') ? parseFloat(urlParams.get('balance')) : null;
+    const botRefs = urlParams.has('refs') ? parseInt(urlParams.get('refs')) : 0;
 
-    // Обновляем интерфейс загруженными данными
+    let balance = 0.00;
+    
+    // Если бот передал баланс, используем его (база данных в приоритете)
+    if (botBalance !== null) {
+      balance = botBalance;
+      // Сохраняем актуальный баланс от бота в память телефона
+      localStorage.setItem(storageKeyBalance, balance.toFixed(2));
+    } else {
+      // Иначе берем из памяти
+      balance = parseFloat(localStorage.getItem(storageKeyBalance)) || 0.00;
+    }
+
+    // Обновляем статистику на странице
+    document.getElementById('totalRefs').innerText = botRefs;
+    document.getElementById('activeRefs').innerText = botRefs;
+    document.getElementById('totalEarned').innerText = '$' + (botRefs * 2).toFixed(2);
     document.getElementById('userBalance').innerText = balance.toFixed(2);
+
+    let isTaskDone = localStorage.getItem(storageKeyTask) === 'true';
 
     // Если задание уже было выполнено ранее, меняем кнопку сразу при загрузке
     if (isTaskDone) {
