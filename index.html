@@ -1,866 +1,522 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#0D0D0D">
-    <title>Инвентарь - Telegram Mini App</title>
-    
-    <!-- Telegram WebApp SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <!-- Font Awesome для иконок -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --tg-theme-bg-color: #0D0D0D;
-            --tg-theme-text-color: #FFFFFF;
-            --tg-theme-hint-color: #999999;
-            --tg-theme-link-color: #5B8DEE;
-            --tg-theme-button-color: #5B8DEE;
-            --tg-theme-button-text-color: #FFFFFF;
-            --tg-theme-secondary-bg-color: #1C1C1C;
-            --safe-area-inset-top: 0px;
-            --safe-area-inset-bottom: 0px;
-            --safe-area-inset-left: 0px;
-            --safe-area-inset-right: 0px;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            background-color: var(--tg-theme-bg-color);
-            color: var(--tg-theme-text-color);
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Icons', 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        body {
-            display: flex;
-            flex-direction: column;
-            padding-top: var(--safe-area-inset-top);
-            padding-bottom: var(--safe-area-inset-bottom);
-            padding-left: var(--safe-area-inset-left);
-            padding-right: var(--safe-area-inset-right);
-            overflow: hidden;
-        }
-
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-color: var(--tg-theme-bg-color);
-        }
-
-        /* HEADER SECTION */
-        .header {
-            padding: 16px;
-            background-color: var(--tg-theme-bg-color);
-            border-bottom: 1px solid var(--tg-theme-secondary-bg-color);
-            animation: slideDown 0.3s ease-out;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .user-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background-color: var(--tg-theme-secondary-bg-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            flex-shrink: 0;
-            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes popIn {
-            0% {
-                transform: scale(0.8);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .user-info {
-            flex: 1;
-        }
-
-        .user-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--tg-theme-text-color);
-            line-height: 1.3;
-        }
-
-        .user-id {
-            font-size: 13px;
-            color: var(--tg-theme-hint-color);
-            margin-top: 2px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .stat-card {
-            background-color: var(--tg-theme-secondary-bg-color);
-            border-radius: 12px;
-            padding: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            animation: fadeIn 0.5s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .stat-card:nth-child(1) {
-            animation-delay: 0.1s;
-        }
-
-        .stat-card:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .stat-icon {
-            font-size: 18px;
-            color: var(--tg-theme-link-color);
-        }
-
-        .stat-content {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: var(--tg-theme-hint-color);
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--tg-theme-text-color);
-        }
-
-        /* CONTENT SECTION */
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .content::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .content::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .content::-webkit-scrollbar-thumb {
-            background: var(--tg-theme-secondary-bg-color);
-            border-radius: 3px;
-        }
-
-        .section {
-            margin-bottom: 24px;
-            animation: fadeIn 0.6s ease-out;
-        }
-
-        .section:nth-child(1) {
-            animation-delay: 0.3s;
-        }
-
-        .section:nth-child(2) {
-            animation-delay: 0.4s;
-        }
-
-        .section-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--tg-theme-hint-color);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-            padding-left: 4px;
-        }
-
-        .empty-state {
-            background-color: var(--tg-theme-secondary-bg-color);
-            border-radius: 16px;
-            padding: 24px;
-            text-align: center;
-            animation: slideUp 0.4s ease-out;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-            opacity: 0.5;
-        }
-
-        .empty-state-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--tg-theme-text-color);
-            margin-bottom: 8px;
-        }
-
-        .empty-state-description {
-            font-size: 13px;
-            color: var(--tg-theme-hint-color);
-            line-height: 1.4;
-            margin-bottom: 16px;
-        }
-
-        .btn {
-            background-color: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
-            border: none;
-            border-radius: 8px;
-            padding: 10px 16px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        .btn:active {
-            transform: scale(0.95);
-            opacity: 0.85;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
-            border: 1px solid var(--tg-theme-secondary-bg-color);
-        }
-
-        .btn-small {
-            padding: 8px 12px;
-            font-size: 13px;
-        }
-
-        /* BOTTOM NAVIGATION */
-        .bottom-nav {
-            display: flex;
-            justify-content: space-around;
-            background-color: var(--tg-theme-secondary-bg-color);
-            border-top: 1px solid #2A2A2A;
-            padding: 0;
-            padding-bottom: var(--safe-area-inset-bottom);
-            gap: 0;
-            animation: slideUp 0.3s ease-out;
-        }
-
-        .nav-item {
-            flex: 1;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            background: none;
-            color: var(--tg-theme-hint-color);
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        .nav-item:active {
-            transform: scale(0.95);
-        }
-
-        .nav-item.active {
-            color: var(--tg-theme-link-color);
-        }
-
-        .nav-icon {
-            font-size: 24px;
-        }
-
-        .nav-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        /* TAB CONTENT */
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        /* INVENTORY ITEMS */
-        .inventory-item {
-            background-color: var(--tg-theme-secondary-bg-color);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: all 0.3s ease;
-            animation: slideUp 0.4s ease-out;
-        }
-
-        .inventory-item:hover {
-            background-color: #252525;
-            transform: translateX(4px);
-        }
-
-        .inventory-item:active {
-            transform: translateX(2px);
-        }
-
-        .item-icon {
-            font-size: 32px;
-            min-width: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .item-info {
-            flex: 1;
-        }
-
-        .item-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--tg-theme-text-color);
-        }
-
-        .item-description {
-            font-size: 12px;
-            color: var(--tg-theme-hint-color);
-            margin-top: 2px;
-        }
-
-        .item-value {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--tg-theme-link-color);
-        }
-
-        /* MODAL */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .modal.active {
-            display: flex;
-            align-items: flex-end;
-        }
-
-        .modal-content {
-            background-color: var(--tg-theme-secondary-bg-color);
-            border-radius: 24px 24px 0 0;
-            padding: 24px;
-            width: 100%;
-            max-height: 80vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            animation: slideUp 0.3s ease-out;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .modal-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--tg-theme-text-color);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--tg-theme-hint-color);
-            cursor: pointer;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .modal-close:active {
-            transform: scale(0.9);
-        }
-
-        .modal-body {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--tg-theme-text-color);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .form-input {
-            background-color: var(--tg-theme-bg-color);
-            border: 1px solid #333333;
-            border-radius: 8px;
-            padding: 12px;
-            color: var(--tg-theme-text-color);
-            font-size: 14px;
-            font-family: inherit;
-            transition: all 0.3s ease;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--tg-theme-link-color);
-            background-color: #1a1a1a;
-        }
-
-        .form-input::placeholder {
-            color: var(--tg-theme-hint-color);
-        }
-
-        .modal-footer {
-            display: flex;
-            gap: 8px;
-            margin-top: 24px;
-        }
-
-        .modal-footer .btn {
-            flex: 1;
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 480px) {
-            .header {
-                padding: 12px;
-            }
-
-            .content {
-                padding: 12px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .modal-content {
-                padding: 16px;
-            }
-        }
-
-        /* DARK THEME */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --tg-theme-bg-color: #0D0D0D;
-                --tg-theme-secondary-bg-color: #1C1C1C;
-            }
-        }
-
-        /* LIGHT THEME */
-        @media (prefers-color-scheme: light) {
-            :root {
-                --tg-theme-bg-color: #FFFFFF;
-                --tg-theme-text-color: #000000;
-                --tg-theme-hint-color: #666666;
-                --tg-theme-secondary-bg-color: #F0F0F0;
-            }
-
-            .header {
-                border-bottom-color: #E0E0E0;
-            }
-
-            .bottom-nav {
-                border-top-color: #E0E0E0;
-            }
-
-            .empty-state,
-            .stat-card,
-            .inventory-item {
-                background-color: var(--tg-theme-secondary-bg-color);
-            }
-
-            .inventory-item:hover {
-                background-color: #E0E0E0;
-            }
-
-            .form-input {
-                background-color: #F5F5F5;
-                border-color: #E0E0E0;
-            }
-
-            .form-input:focus {
-                background-color: #FFFFFF;
-            }
-
-            .modal-content {
-                background-color: #F5F5F5;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Telegram Mini App</title>
+  <!-- Подключаем Telegram WebApp SDK и иконки FontAwesome -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg-color: #f4f7fb;
+      --card-bg: #ffffff;
+      --primary: #2b7fff;
+      --primary-hover: #1a6bf2;
+      --text-main: #111827;
+      --text-sub: #6b7280;
+      --badge-bg: #eef5ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Хедер */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background-color: var(--bg-color);
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2b7fff, #0052cc);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .user-details .username {
+      font-weight: 700;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .verified-icon {
+      color: var(--primary);
+      font-size: 14px;
+    }
+
+    .balance {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .currency-icon {
+      color: var(--primary);
+      margin-left: 2px;
+    }
+
+    .notification-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      color: var(--text-sub);
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* Контейнер контента */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 20px 80px 20px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      color: var(--text-sub);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    /* Карточки */
+    .card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    }
+
+    /* Карточка задания */
+    .task-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .task-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .task-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: #29b6f6;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .task-details .task-title {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+
+    .task-details .task-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+
+    .reward-badge {
+      display: inline-block;
+      background: var(--badge-bg);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 10px;
+    }
+
+    .btn-action {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-action:active {
+      background: var(--primary-hover);
+    }
+
+    .btn-action.done {
+      background: #e5e7eb;
+      color: #9ca3af;
+      cursor: default;
+    }
+
+    /* Реферальная страница */
+    .ref-reward-box {
+      text-align: center;
+      padding: 24px;
+    }
+
+    .ref-reward-title {
+      font-size: 14px;
+      color: var(--text-sub);
+    }
+
+    .ref-reward-amount {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 8px 0;
+    }
+
+    .invite-link-box {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .invite-input {
+      flex: 1;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    .btn-copy {
+      background: var(--primary);
+      color: white;
+      border: none;
+      width: 46px;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat-item {
+      background: #f9fafb;
+      padding: 12px;
+      border-radius: 14px;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    /* Страница вывода */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-sub);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    /* Нижнее меню (Navigation Bar) */
+    .nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 65px;
+      background: #ffffff;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 1px solid #edf2f7;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #9ca3af;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 33%;
+    }
+
+    .nav-item i {
+      font-size: 20px;
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+    }
+  </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- HEADER -->
-        <div class="header">
-            <div class="user-profile">
-                <div class="user-avatar" id="userAvatar">👤</div>
-                <div class="user-info">
-                    <div class="user-name" id="userName">ник человека</div>
-                    <div class="user-id" id="userId">User ID: айди человека</div>
-                </div>
-            </div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">📦</div>
-                    <div class="stat-content">
-                        <div class="stat-label">Открыто кейсов</div>
-                        <div class="stat-value" id="casesOpened">0</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⭐</div>
-                    <div class="stat-content">
-                        <div class="stat-label">Ценность</div>
-                        <div class="stat-value" id="starsBalance">0</div>
-                    </div>
-                </div>
-            </div>
+  <!-- Верхняя панель -->
+  <div class="header">
+    <div class="profile-info">
+      <div class="avatar" id="userAvatar"><i class="fa-solid fa-user"></i></div>
+      <div class="user-details">
+        <div class="username"><span id="userName">User</span> <i class="fa-solid fa-circle-check verified-icon"></i></div>
+        <div class="balance">$<span id="userBalance">0.00</span> <i class="fa-solid fa-coins currency-icon"></i></div>
+      </div>
+    </div>
+    <button class="notification-btn"><i class="fa-regular fa-bell"></i></button>
+  </div>
+
+  <!-- Контент страниц -->
+  <div class="content">
+    
+    <!-- 1. Вкладка ЗАДАНИЯ (Tasks) -->
+    <div id="page-tasks" class="page active">
+      <h1 class="page-title">Tasks</h1>
+      <p class="page-subtitle">Complete tasks and earn rewards</p>
+
+      <!-- Единственное задание: Подписка на ТГ канал -->
+      <div class="card task-card">
+        <div class="task-left">
+          <div class="task-icon">
+            <i class="fa-paper-plane"></i>
+          </div>
+          <div class="task-details">
+            <div class="task-title">Join Telegram Channel</div>
+            <div class="task-sub">Join channel to earn reward</div>
+            <div class="reward-badge">+$2.00 <i class="fa-solid fa-coins"></i></div>
+          </div>
         </div>
-
-        <!-- CONTENT -->
-        <div class="content">
-            <!-- INVENTORY TAB -->
-            <div class="tab-content active" id="inventoryTab">
-                <!-- GIFTS SECTION -->
-                <div class="section">
-                    <div class="section-title">🎁 Подарки</div>
-                    <div id="giftsContainer">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">🎁</div>
-                            <div class="empty-state-title">У вас пока нет подарков</div>
-                            <button class="btn" onclick="openGiftModal()">
-                                <i class="fas fa-plus"></i> Добавить
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- COUPONS SECTION -->
-                <div class="section">
-                    <div class="section-title">🎟️ Купоны</div>
-                    <div id="couponsContainer">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">🎟️</div>
-                            <div class="empty-state-title">У вас пока нет купонов</div>
-                            <div class="empty-state-description">
-                                Когда вы получите купоны, они появятся в инвентаре.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- REFERRALS TAB -->
-            <div class="tab-content" id="referralsTab">
-                <div class="section">
-                    <div class="section-title">👥 Рефералы</div>
-                    <div class="empty-state">
-                        <div class="empty-state-icon">👥</div>
-                        <div class="empty-state-title">У вас пока нет рефералов</div>
-                        <div class="empty-state-description">
-                            Пригласите друзей по вашей реферальной ссылке и начните зарабатывать.
-                        </div>
-                        <button class="btn" style="margin-top: 12px;">
-                            <i class="fas fa-share"></i> Поделиться ссылкой
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- BOTTOM NAVIGATION -->
-        <div class="bottom-nav">
-            <button class="nav-item active" onclick="switchTab('inventory')">
-                <div class="nav-icon">📦</div>
-                <div class="nav-label">Инвентарь</div>
-            </button>
-            <button class="nav-item" onclick="switchTab('referrals')">
-                <div class="nav-icon">👥</div>
-                <div class="nav-label">Рефералы</div>
-            </button>
-        </div>
+        <button class="btn-action" id="taskBtn" onclick="completeTask()">Join</button>
+      </div>
     </div>
 
-    <!-- GIFT MODAL -->
-    <div class="modal" id="giftModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">Добавить подарок</div>
-                <button class="modal-close" onclick="closeGiftModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Название подарка</label>
-                    <input type="text" class="form-input" id="giftName" placeholder="Введите название">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Описание</label>
-                    <input type="text" class="form-input" id="giftDescription" placeholder="Введите описание">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Стоимость (звезды)</label>
-                    <input type="number" class="form-input" id="giftValue" placeholder="0" min="0">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeGiftModal()">Отмена</button>
-                <button class="btn" onclick="addGift()">Добавить</button>
-            </div>
+    <!-- 2. Вкладка РЕФЕРАЛЫ (Refer) -->
+    <div id="page-refer" class="page">
+      <h1 class="page-title">Refer & Earn</h1>
+      <p class="page-subtitle">Invite friends and earn more rewards</p>
+
+      <div class="card ref-reward-box">
+        <div class="ref-reward-title">Per Refer Reward</div>
+        <div class="ref-reward-amount">$2.00 <i class="fa-solid fa-coins currency-icon"></i></div>
+        <p style="font-size: 13px; color: var(--text-sub);">You earn $2.00 for every friend you invite.</p>
+
+        <div class="invite-link-box">
+          <input type="text" class="invite-input" id="refLink" value="https://t.me/your_bot?start=123456" readonly>
+          <button class="btn-copy" onclick="copyLink()"><i class="fa-regular fa-copy"></i></button>
         </div>
+
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-val" id="totalRefs">0</div>
+            <div class="stat-lbl">Total Referrals</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" id="activeRefs">0</div>
+            <div class="stat-lbl">Active Referrals</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" id="totalEarned">$0.00</div>
+            <div class="stat-lbl">Total Earned</div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <script>
-        // Initialize Telegram WebApp
-        const tg = window.Telegram.WebApp;
-        tg.ready();
+    <!-- 3. Вкладка ВЫПЛАТЫ (Withdraw) -->
+    <div id="page-withdraw" class="page">
+      <h1 class="page-title">Withdraw</h1>
+      <p class="page-subtitle">Transfer your earnings to your wallet</p>
 
-        // Set theme colors
-        tg.onEvent('themeChanged', updateTheme);
+      <div class="card">
+        <div class="form-group">
+          <label>Payment Method</label>
+          <input type="text" class="form-input" value="USDT (TRC20)" readonly>
+        </div>
+        <div class="form-group">
+          <label>Wallet Address</label>
+          <input type="text" class="form-input" placeholder="Enter your wallet address">
+        </div>
+        <div class="form-group">
+          <label>Amount ($)</label>
+          <input type="number" class="form-input" placeholder="Enter amount">
+        </div>
+        <button class="btn-submit" onclick="requestWithdraw()">Withdraw</button>
+      </div>
+    </div>
 
-        function updateTheme() {
-            if (tg.colorScheme === 'dark') {
-                document.documentElement.style.setProperty('--tg-theme-bg-color', '#0D0D0D');
-                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', '#1C1C1C');
-            } else {
-                document.documentElement.style.setProperty('--tg-theme-bg-color', '#FFFFFF');
-                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', '#F0F0F0');
-            }
-        }
+  </div>
 
-        // Initialize user data
-        function initializeUser() {
-            const user = tg.initDataUnsafe?.user;
-            
-            if (user) {
-                document.getElementById('userName').textContent = user.username || user.first_name || 'ник человека';
-                document.getElementById('userId').textContent = `User ID: ${user.id}`;
-                
-                if (user.photo_url) {
-                    document.getElementById('userAvatar').innerHTML = `<img src="${user.photo_url}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
-                } else {
-                    document.getElementById('userAvatar').textContent = user.first_name?.charAt(0).toUpperCase() || '👤';
-                }
-            }
+  <!-- Нижняя навигация -->
+  <div class="nav-bar">
+    <div class="nav-item active" onclick="switchTab('tasks', this)">
+      <i class="fa-solid fa-list-check"></i>
+      <span>Tasks</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('refer', this)">
+      <i class="fa-solid fa-user-group"></i>
+      <span>Refer</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('withdraw', this)">
+      <i class="fa-solid fa-wallet"></i>
+      <span>Withdraw</span>
+    </div>
+  </div>
 
-            // Load user stats (example)
-            loadUserStats();
-        }
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.expand();
+    }
 
-        function loadUserStats() {
-            // Simulate loading stats
-            document.getElementById('casesOpened').textContent = '12';
-            document.getElementById('starsBalance').textContent = '500 ★';
-        }
+    // Инициализация данных из Telegram
+    let balance = 0.00;
+    const channelLink = "https://t.me/+5iLuHR-4a2sxZTEy"; // Ссылка из твоего запроса
 
-        // Tab switching
-        function switchTab(tabName) {
-            const tabs = document.querySelectorAll('.tab-content');
-            const navItems = document.querySelectorAll('.nav-item');
+    if (tg?.initDataUnsafe?.user) {
+      document.getElementById('userName').innerText = tg.initDataUnsafe.user.first_name;
+      document.getElementById('refLink').value = `https://t.me/your_bot?start=${tg.initDataUnsafe.user.id}`;
+    }
 
-            tabs.forEach(tab => tab.classList.remove('active'));
-            navItems.forEach(item => item.classList.remove('active'));
+    // Переключение вкладок
+    function switchTab(pageId, element) {
+      document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
 
-            if (tabName === 'inventory') {
-                document.getElementById('inventoryTab').classList.add('active');
-                navItems[0].classList.add('active');
-            } else if (tabName === 'referrals') {
-                document.getElementById('referralsTab').classList.add('active');
-                navItems[1].classList.add('active');
-            }
-        }
+      document.getElementById(`page-${pageId}`).classList.add('active');
+      element.classList.add('active');
+    }
 
-        // Gift management
-        function openGiftModal() {
-            document.getElementById('giftModal').classList.add('active');
-            tg.HapticFeedback.impactOccurred('light');
-        }
+    // Логика выполнения задания
+    function completeTask() {
+      const btn = document.getElementById('taskBtn');
+      if (btn.classList.contains('done')) return;
 
-        function closeGiftModal() {
-            document.getElementById('giftModal').classList.remove('active');
-            document.getElementById('giftName').value = '';
-            document.getElementById('giftDescription').value = '';
-            document.getElementById('giftValue').value = '';
-        }
+      // 1. Перенаправляем пользователя в ТГ Канал
+      if (tg) {
+        tg.openTelegramLink(channelLink);
+      } else {
+        window.open(channelLink, '_blank');
+      }
 
-        function addGift() {
-            const name = document.getElementById('giftName').value.trim();
-            const description = document.getElementById('giftDescription').value.trim();
-            const value = document.getElementById('giftValue').value.trim();
+      // 2. Меняем статус кнопки и зачисляем $2
+      btn.innerText = "Checking...";
+      setTimeout(() => {
+        balance += 2.00;
+        document.getElementById('userBalance').innerText = balance.toFixed(2);
+        btn.innerText = "Done";
+        btn.classList.add('done');
+        alert("Задание выполнено! Вам начислено +$2.00");
+      }, 3000);
+    }
 
-            if (!name) {
-                alert('Пожалуйста, введите название подарка');
-                return;
-            }
+    // Копирование реферальной ссылки
+    function copyLink() {
+      const copyText = document.getElementById("refLink");
+      copyText.select();
+      document.execCommand("copy");
+      alert("Ссылка скопирована!");
+    }
 
-            // Create gift item
-            const giftItem = document.createElement('div');
-            giftItem.className = 'inventory-item';
-            giftItem.innerHTML = `
-                <div class="item-icon">🎁</div>
-                <div class="item-info">
-                    <div class="item-name">${escapeHtml(name)}</div>
-                    <div class="item-description">${escapeHtml(description || 'Без описания')}</div>
-                </div>
-                <div class="item-value">${value || '0'} ★</div>
-            `;
-
-            const container = document.getElementById('giftsContainer');
-            
-            if (container.querySelector('.empty-state')) {
-                container.innerHTML = '';
-            }
-
-            container.appendChild(giftItem);
-            tg.HapticFeedback.impactOccurred('medium');
-
-            // Send data to bot (example)
-            tg.sendData(JSON.stringify({
-                action: 'add_gift',
-                gift: { name, description, value }
-            }));
-
-            closeGiftModal();
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Initialize app on load
-        window.addEventListener('load', initializeUser);
-
-        // Expand app to full height
-        tg.expand();
-
-        // Set main button
-        tg.MainButton.text = 'Подтвердить';
-        tg.MainButton.show();
-        tg.MainButton.onClick(() => {
-            tg.close();
-        });
-
-        // Handle back button
-        tg.BackButton.onClick(() => {
-            tg.close();
-        });
-    </script>
+    // Запрос выплаты
+    function requestWithdraw() {
+      if (balance < 10) {
+        alert("Минимальная сумма вывода $10.00");
+      } else {
+        alert("Заявка на вывод отправлена!");
+      }
+    }
+  </script>
 </body>
 </html>
