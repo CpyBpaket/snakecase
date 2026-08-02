@@ -1,689 +1,926 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Kokos Mini App</title>
-  <!-- Telegram WebApp SDK & FontAwesome -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <style>
-    :root {
-      --bg-color: #f4f7fb;
-      --card-bg: #ffffff;
-      --primary: #2b7fff;
-      --primary-hover: #1a6bf2;
-      --text-main: #111827;
-      --text-sub: #6b7280;
-      --badge-bg: #eef5ff;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>SlimChat</title>
+<style>
+  :root{
+    --bg:#000; --bg2:#1c1c1e; --bg3:#2c2c2e; --bg4:#3a3a3c;
+    --text:#fff; --sub:#8e8e93; --divider:#3a3a3c;
+    --accent:#3aa0ff; --accent2:#ff5a3c; --green:#34c759;
+  }
+  [data-theme="light"]{
+    --bg:#efeff4; --bg2:#ffffff; --bg3:#f2f2f7; --bg4:#e5e5ea;
+    --text:#000; --sub:#6d6d72; --divider:#dcdce0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;background:#000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;align-items:center;color:var(--text);overflow:hidden;}
+  button,input{font-family:inherit;}
+  .device{
+    width:390px;height:844px;position:relative;overflow:hidden;
+    background:var(--bg2);border-radius:44px;box-shadow:0 0 0 8px #0a0a0a, 0 20px 60px rgba(0,0,0,.6);
+  }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
+  /* Desktop / mouse: keep the real 390x844 layout pixel-perfect, just scale the whole mockup
+     to fit the window so nothing gets cropped or distorted at any window size */
+  @media (hover:hover) and (pointer:fine){
+    .device{ transform:scale(var(--app-scale,1)); transform-origin:center center; }
+  }
 
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
+  /* Phones/tablets (touch): true full-screen app, no mockup frame, fills the real viewport */
+  @media (hover:none), (pointer:coarse){
+    .device{
+      width:100vw; width:100dvw;
+      height:100vh; height:100dvh;
+      border-radius:0; box-shadow:none;
+      transform:none !important;
     }
+  }
+  .layer{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg2);transition:transform .38s cubic-bezier(.32,.72,0,1),opacity .3s;will-change:transform;backface-visibility:hidden;pointer-events:none;}
+  .layer.on-screen{pointer-events:auto;}
+  .status{display:flex;justify-content:space-between;align-items:center;padding:16px 26px 6px;font-size:15px;font-weight:600;flex-shrink:0;}
+  .status .right{display:flex;align-items:center;gap:5px;font-weight:500;font-size:13px;}
+  .battery{background:rgba(255,255,255,.9);color:#000;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;}
+  .scroll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;}
+  .scroll::-webkit-scrollbar{display:none;}
+  .hidden{display:none !important;}
 
-    /* Хедер */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
-      background-color: var(--bg-color);
-    }
+  /* ---------- REGISTRATION ---------- */
+  #reg-welcome{background:radial-gradient(circle at 50% 20%,#2b5fd9 0%,#0b1030 55%,#000 100%);align-items:center;justify-content:center;text-align:center;padding:40px;}
+  .logo-orb{width:110px;height:110px;border-radius:32px;background:linear-gradient(145deg,#4facfe,#3aa0ff 50%,#a06bff);display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:0 12px 40px rgba(58,160,255,.5);margin-bottom:26px;animation:float 3.5s ease-in-out infinite;}
+  @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+  .app-name{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;}
+  .app-tagline{color:#b9c2d6;font-size:15.5px;line-height:1.5;max-width:280px;margin-bottom:50px;}
+  .btn-primary{background:linear-gradient(135deg,#3aa0ff,#5b6bff);color:#fff;border:none;padding:16px 0;width:100%;max-width:280px;border-radius:16px;font-size:17px;font-weight:700;box-shadow:0 8px 24px rgba(58,160,255,.4);transition:transform .15s;}
+  .btn-primary:active{transform:scale(.97);}
+  .btn-primary:disabled{opacity:.4;box-shadow:none;}
+  .legal{color:#7c8397;font-size:12px;margin-top:18px;max-width:260px;line-height:1.5;}
 
-    .profile-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+  .reg-header{display:flex;align-items:center;gap:14px;padding:10px 20px 4px;flex-shrink:0;}
+  .back-btn{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:none;color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .reg-body{padding:26px 26px 20px;flex:1;display:flex;flex-direction:column;}
+  .reg-title{font-size:26px;font-weight:800;margin-bottom:8px;}
+  .reg-sub{color:var(--sub);font-size:15px;line-height:1.5;margin-bottom:28px;}
+  .phone-row{display:flex;gap:10px;margin-bottom:10px;}
+  .country-select{background:var(--bg3);border:none;color:var(--text);border-radius:14px;padding:0 14px;font-size:17px;font-weight:600;}
+  .input-pill{background:var(--bg3);border:none;color:var(--text);border-radius:14px;padding:15px 16px;font-size:18px;outline:none;flex:1;letter-spacing:.5px;}
+  .input-pill::placeholder{color:var(--sub);}
+  .reg-footer{margin-top:auto;padding-top:20px;}
 
-    .avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #2b7fff, #0052cc);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-    }
+  .code-boxes{display:flex;gap:10px;justify-content:center;margin-bottom:22px;}
+  .code-box{width:52px;height:60px;border-radius:14px;background:var(--bg3);border:2px solid transparent;text-align:center;font-size:26px;font-weight:700;color:var(--text);outline:none;}
+  .code-box.filled{border-color:var(--accent);}
+  .resend{color:var(--accent);font-size:15px;text-align:center;background:none;border:none;}
+  .resend:disabled{color:var(--sub);}
+  .center-sub{text-align:center;}
 
-    .user-details .username {
-      font-weight: 700;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
+  .avatar-pick{width:120px;height:120px;border-radius:50%;background:linear-gradient(160deg,#f0e6d8,#e8c9c9 55%,#d8b98e);display:flex;align-items:center;justify-content:center;font-size:60px;margin:0 auto 8px;position:relative;cursor:pointer;}
+  .avatar-pick .cam{position:absolute;bottom:0;right:0;width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;border:3px solid var(--bg2);}
+  .avatar-hint{text-align:center;color:var(--sub);font-size:13px;margin-bottom:26px;}
+  .reg-field{background:var(--bg3);border-radius:14px;padding:14px 16px;margin-bottom:12px;}
+  .reg-field input{background:none;border:none;outline:none;color:var(--text);font-size:17px;width:100%;}
+  .reg-field input::placeholder{color:var(--sub);}
 
-    .verified-icon {
-      color: var(--primary);
-      font-size: 14px;
-    }
+  .spinner{width:20px;height:20px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;}
+  @keyframes spin{to{transform:rotate(360deg);}}
 
-    .balance {
-      font-size: 18px;
-      font-weight: 800;
-    }
+  /* ---------- APP SHELL ---------- */
+  #app{background:var(--bg2);}
+  .tab-panel{display:none;flex-direction:column;flex:1;min-height:0;}
+  .tab-panel.active{display:flex;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 2px;flex-shrink:0;}
+  .icon-btn{width:38px;height:38px;border-radius:50%;background:var(--bg3);border:none;color:var(--text);font-size:17px;display:flex;align-items:center;justify-content:center;}
+  .page-title{font-size:30px;font-weight:800;padding:8px 16px 12px;flex-shrink:0;}
+  .search-bar{margin:0 16px 12px;background:var(--bg3);border-radius:12px;display:flex;align-items:center;padding:10px 14px;color:var(--sub);gap:8px;flex-shrink:0;}
+  .search-bar input{background:none;border:none;outline:none;color:var(--text);font-size:16px;flex:1;}
+  .search-bar input::placeholder{color:var(--sub);}
 
-    .currency-icon {
-      color: var(--primary);
-      margin-left: 2px;
-    }
+  .archive-row{display:flex;align-items:center;padding:10px 16px;color:var(--sub);font-size:15px;gap:10px;}
+  .divider{height:1px;background:var(--divider);margin:0 16px;}
 
-    .notification-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #ffffff;
-      border: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      color: var(--text-sub);
-      font-size: 16px;
-      cursor: pointer;
-      position: relative;
-    }
+  .chat-item{display:flex;align-items:center;padding:10px 16px;gap:12px;cursor:pointer;}
+  .avatar{width:52px;height:52px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:linear-gradient(160deg,#3aa0ff,#5b6bff);}
+  .avatar.warm{background:linear-gradient(160deg,#f0e6d8,#e8c9c9 55%,#d8b98e);}
+  .avatar.star{background:#2f6fed;color:#ffd23f;}
+  .chat-content{flex:1;min-width:0;border-bottom:1px solid var(--divider);padding-bottom:12px;}
+  .chat-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;gap:8px;}
+  .chat-name{font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .chat-time{font-size:13px;color:var(--sub);flex-shrink:0;}
+  .chat-preview{font-size:14.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .check{color:var(--accent);}
+  .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--sub);text-align:center;padding:30px;gap:8px;}
+  .empty-state .big{font-size:52px;margin-bottom:6px;}
 
-    /* Контент страниц */
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0 20px 80px 20px;
-    }
+  .bottom-nav{display:flex;justify-content:space-around;padding:8px 0 22px;border-top:1px solid var(--divider);background:var(--bg2);flex-shrink:0;}
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--sub);background:none;border:none;padding:4px 8px;}
+  .nav-item.active{color:var(--text);}
+  .nav-icon{font-size:20px;}
 
-    .page {
-      display: none;
-    }
+  /* Contacts / Calls list rows */
+  .list-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--divider);}
+  .list-row .meta{flex:1;min-width:0;}
+  .list-row .name{font-size:16.5px;font-weight:600;}
+  .list-row .sub{font-size:13.5px;color:var(--sub);margin-top:2px;}
+  .call-icon{font-size:15px;}
+  .call-icon.missed{color:#ff453a;}
+  .call-icon.in{color:var(--green);}
+  .call-icon.out{color:var(--accent);}
+  .segmented{display:flex;background:var(--bg3);border-radius:10px;margin:6px 16px 10px;padding:3px;flex-shrink:0;}
+  .seg-opt{flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:14px;color:var(--sub);background:none;border:none;}
+  .seg-opt.active{background:var(--bg4);color:var(--text);font-weight:600;}
 
-    .page.active {
-      display: block;
-    }
+  /* Profile tab */
+  .profile-card{display:flex;flex-direction:column;align-items:center;padding:26px 20px 10px;}
+  .profile-card .avatar{width:96px;height:96px;font-size:46px;margin-bottom:12px;}
+  .profile-card .pname{font-size:22px;font-weight:700;}
+  .profile-card .puser{color:var(--sub);font-size:15px;margin-top:2px;}
+  .profile-actions{padding:16px;display:flex;flex-direction:column;gap:10px;}
+  .action-row{background:var(--bg3);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;border:none;color:var(--text);font-size:16px;text-align:left;}
+  .action-row .chev{margin-left:auto;color:var(--sub);}
 
-    .page-title {
-      font-size: 24px;
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
+  /* Settings */
+  .settings-group{background:var(--bg3);border-radius:14px;margin:10px 16px;overflow:hidden;}
+  .settings-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--divider);font-size:16px;}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-row .lbl{flex:1;}
+  .settings-row .val{color:var(--sub);}
+  .switch{width:48px;height:28px;border-radius:16px;background:var(--bg4);position:relative;border:none;flex-shrink:0;transition:background .2s;}
+  .switch.on{background:var(--green);}
+  .switch .knob{width:24px;height:24px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .switch.on .knob{transform:translateX(20px);}
+  .logout-btn{margin:20px 16px;background:var(--bg3);color:#ff453a;border:none;border-radius:14px;padding:14px 0;width:calc(100% - 32px);font-size:16px;font-weight:600;}
 
-    .page-subtitle {
-      color: var(--text-sub);
-      font-size: 14px;
-      margin-bottom: 20px;
-    }
+  /* Chat conversation overlay */
+  #chatView{transform:translateX(100%);z-index:20;}
+  .chat-header{display:flex;align-items:center;gap:10px;padding:10px 12px 12px;border-bottom:1px solid var(--divider);flex-shrink:0;}
+  .chat-header .avatar{width:36px;height:36px;font-size:18px;}
+  .chat-header .hname{font-size:16px;font-weight:700;}
+  .chat-header .hstatus{font-size:12px;color:var(--sub);}
+  .messages{flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:8px;}
+  .msg{max-width:75%;padding:9px 13px;border-radius:16px;font-size:15.5px;line-height:1.4;position:relative;word-wrap:break-word;}
+  .msg.them{align-self:flex-start;background:var(--bg3);border-bottom-left-radius:4px;}
+  .msg.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
+  .msg.system{align-self:center;background:var(--bg3);color:var(--sub);font-size:12.5px;padding:6px 12px;border-radius:12px;max-width:90%;text-align:center;}
+  .msg .mtime{font-size:10.5px;opacity:.7;margin-top:3px;text-align:right;}
+  .typing{align-self:flex-start;color:var(--sub);font-size:13px;padding:0 4px;font-style:italic;}
+  .input-bar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--divider);flex-shrink:0;}
+  .input-bar input{flex:1;background:var(--bg3);border:none;border-radius:20px;padding:11px 16px;font-size:16px;color:var(--text);outline:none;}
+  .send-btn{width:38px;height:38px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .send-btn:disabled{opacity:.4;}
 
-    .card {
-      background: var(--card-bg);
-      border-radius: 20px;
-      padding: 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-    }
+  /* Profile edit overlay (screen A) */
+  #editProfileView{transform:translateX(100%);z-index:30;}
+  .ep-status-wrap{background:linear-gradient(180deg,#8f1f2b,#3a1015 90%);flex-shrink:0;}
+  .nav-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 16px;}
+  .nav-btn{background:rgba(255,255,255,.12);border:none;color:#ff8a70;font-size:16px;padding:8px 16px;border-radius:20px;}
+  .nav-btn.done{color:#ffb199;}
+  .nav-title{font-size:16px;font-weight:700;color:#fff;}
+  .avatar-wrap{display:flex;flex-direction:column;align-items:center;padding:22px 0 14px;flex-shrink:0;}
+  .avatar-circle{width:110px;height:110px;border-radius:50%;background:linear-gradient(160deg,#f0e6d8,#e8c9c9 55%,#d8b98e);position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:58px;}
+  .cam-badge{position:absolute;bottom:2px;right:2px;width:32px;height:32px;border-radius:50%;background:#4b4b4d;display:flex;align-items:center;justify-content:center;font-size:15px;border:2px solid #2a1013;}
+  .choose-photo{color:#ff8a70;font-size:16px;margin-top:10px;background:none;border:none;}
+  .field-group{background:var(--bg3);border-radius:14px;margin:14px 16px 0;overflow:hidden;flex-shrink:0;}
+  .field{padding:13px 16px;font-size:17px;border-bottom:1px solid var(--divider);display:flex;align-items:center;gap:10px;}
+  .field:last-child{border-bottom:none;}
+  .field input{background:none;border:none;outline:none;color:var(--text);font-size:17px;width:100%;}
+  .field input::placeholder{color:var(--sub);}
+  .field-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .icon-phone{background:#34c759;} .icon-cal{background:#ff9f0a;} .icon-gender{background:#6a6ae0;}
+  .field-label{flex:1;} .field-value{color:var(--sub);font-size:16px;} .field-value.accent{color:#ff8a70;}
 
-    .task-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+  /* Avatar editor overlay (screen B) */
+  #avatarEditView{transform:translateY(100%);z-index:40;background:linear-gradient(180deg,#5b6472,#4a5260 40%,#3d4451);transition:transform .34s cubic-bezier(.32,.72,0,1);box-shadow:0 -18px 40px rgba(0,0,0,.5);}
+  .top-controls{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;flex-shrink:0;}
+  .round-btn{width:40px;height:40px;border-radius:50%;background:rgba(60,60,63,.8);border:none;color:#fff;font-size:18px;}
+  .round-btn.confirm{background:#ff5a3c;}
+  .toggle-group{display:flex;background:rgba(60,60,63,.8);border-radius:20px;padding:3px;gap:2px;}
+  .toggle-opt{padding:8px 18px;border-radius:18px;font-size:14px;background:none;border:none;color:#d0d0d3;font-weight:500;}
+  .toggle-opt.active{background:#4c4c4f;color:#fff;}
+  .big-avatar-wrap{display:flex;justify-content:center;padding:16px 0 10px;flex-shrink:0;}
+  .big-avatar{width:260px;height:260px;border-radius:50%;background:linear-gradient(160deg,#f0e6d8,#e8c9c9 55%,#d8b98e);display:flex;align-items:center;justify-content:center;font-size:140px;}
+  .customize-btn{display:block;margin:6px auto 18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:16px;font-weight:600;padding:10px 22px;border-radius:20px;flex-shrink:0;}
+  .section-title{font-size:20px;font-weight:700;padding:0 18px 10px;flex-shrink:0;}
+  .field-group2{background:rgba(70,76,88,.6);margin:0 16px 16px;border-radius:14px;overflow:hidden;flex-shrink:0;}
+  .field2{padding:12px 16px;font-size:16.5px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .field2:last-child{border-bottom:none;}
+  .field2 input{background:none;border:none;outline:none;color:#fff;font-size:16.5px;width:100%;}
+  .field2 input::placeholder{color:#b8bac1;}
 
-    .task-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .task-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      background: #29b6f6;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-    }
-
-    .task-details .task-title {
-      font-weight: 700;
-      font-size: 15px;
-      margin-bottom: 2px;
-    }
-
-    .task-details .task-sub {
-      font-size: 12px;
-      color: var(--text-sub);
-      margin-bottom: 6px;
-    }
-
-    .reward-badge {
-      display: inline-block;
-      background: var(--badge-bg);
-      color: var(--primary);
-      font-weight: 700;
-      font-size: 12px;
-      padding: 3px 8px;
-      border-radius: 10px;
-    }
-
-    .btn-action {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 10px 22px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-    }
-
-    .btn-action:active {
-      background: var(--primary-hover);
-      transform: scale(0.96);
-    }
-
-    .btn-action.done {
-      background: #e5e7eb;
-      color: #9ca3af;
-      cursor: default;
-      transform: none;
-    }
-
-    .ref-reward-box {
-      text-align: center;
-      padding: 24px;
-    }
-
-    .ref-reward-title {
-      font-size: 14px;
-      color: var(--text-sub);
-    }
-
-    .ref-reward-amount {
-      font-size: 32px;
-      font-weight: 800;
-      margin: 8px 0;
-    }
-
-    .invite-link-box {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .invite-input {
-      flex: 1;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 13px;
-      color: var(--text-sub);
-    }
-
-    .btn-copy {
-      background: var(--primary);
-      color: white;
-      border: none;
-      width: 46px;
-      border-radius: 12px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: transform 0.1s;
-    }
-
-    .btn-copy:active {
-      transform: scale(0.95);
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .stat-item {
-      background: #f9fafb;
-      padding: 12px;
-      border-radius: 14px;
-      text-align: center;
-    }
-
-    .stat-val {
-      font-weight: 800;
-      font-size: 16px;
-    }
-
-    .stat-lbl {
-      font-size: 11px;
-      color: var(--text-sub);
-      margin-top: 2px;
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: var(--text-sub);
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
-      font-size: 15px;
-      outline: none;
-    }
-
-    .btn-submit {
-      width: 100%;
-      padding: 16px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 14px;
-      font-weight: 700;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: transform 0.1s;
-    }
-
-    .btn-submit:active {
-      transform: scale(0.98);
-    }
-
-    .nav-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 65px;
-      background: #ffffff;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      border-top: 1px solid #edf2f7;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
-    }
-
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      color: #9ca3af;
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      width: 33%;
-    }
-
-    .nav-item i {
-      font-size: 20px;
-    }
-
-    .nav-item.active {
-      color: var(--primary);
-    }
-
-    /* Всплывающие уведомления */
-    #toast-container {
-      position: fixed;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      width: calc(100% - 32px);
-      max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      pointer-events: none;
-    }
-
-    .toast {
-      background: #ffffff;
-      padding: 14px 18px;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      pointer-events: auto;
-      opacity: 0;
-      transform: translateY(-20px) scale(0.95);
-      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-
-    .toast.hide {
-      opacity: 0;
-      transform: translateY(-20px) scale(0.9);
-    }
-
-    .toast-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      flex-shrink: 0;
-    }
-
-    .toast.success .toast-icon {
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--success);
-    }
-
-    .toast.error .toast-icon {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--danger);
-    }
-
-    .toast.warning .toast-icon {
-      background: rgba(245, 158, 11, 0.15);
-      color: var(--warning);
-    }
-
-    .toast-content {
-      flex: 1;
-    }
-
-    .toast-title {
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--text-main);
-      margin-bottom: 2px;
-    }
-
-    .toast-message {
-      font-size: 12px;
-      color: var(--text-sub);
-    }
-  </style>
+  /* Modal */
+  .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s;}
+  .modal-backdrop.show{opacity:1;pointer-events:auto;}
+  .modal-sheet{background:var(--bg3);width:100%;border-radius:20px 20px 0 0;padding:20px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);}
+  .modal-backdrop.show .modal-sheet{transform:translateY(0);}
+  .modal-title{font-size:18px;font-weight:700;margin-bottom:14px;text-align:center;}
+  .modal-input{background:var(--bg4);border:none;border-radius:12px;padding:13px 14px;font-size:16px;color:var(--text);width:100%;outline:none;margin-bottom:10px;}
+  .modal-input::placeholder{color:var(--sub);}
+  .modal-btns{display:flex;gap:10px;margin-top:6px;}
+  .modal-btn{flex:1;padding:13px 0;border-radius:12px;border:none;font-size:16px;font-weight:600;}
+  .modal-btn.cancel{background:var(--bg4);color:var(--text);}
+  .modal-btn.ok{background:var(--accent);color:#fff;}
+</style>
 </head>
 <body>
+<div class="device" id="device">
 
-  <div id="toast-container"></div>
-
-  <!-- Верхняя панель -->
-  <div class="header">
-    <div class="profile-info">
-      <div class="avatar" id="userAvatar"><i class="fa-solid fa-user"></i></div>
-      <div class="user-details">
-        <div class="username"><span id="userName">User</span> <i class="fa-solid fa-circle-check verified-icon"></i></div>
-        <div class="balance">$<span id="userBalance">0.00</span> <i class="fa-solid fa-coins currency-icon"></i></div>
-      </div>
-    </div>
-    <button class="notification-btn" onclick="showNotification('Информация', 'У вас нет новых системных сообщений', 'warning')">
-      <i class="fa-regular fa-bell"></i>
-    </button>
+  <!-- ===================== REGISTRATION ===================== -->
+  <div class="layer on-screen" id="reg-welcome">
+    <div class="logo-orb">💬</div>
+    <div class="app-name">SlimChat</div>
+    <div class="app-tagline">Быстрый и лёгкий мессенджер. Общайтесь без границ — просто, красиво, по делу.</div>
+    <button class="btn-primary" onclick="goTo('reg-phone')">Начать</button>
+    <div class="legal">Продолжая, вы соглашаетесь с условиями использования и политикой конфиденциальности</div>
   </div>
 
-  <!-- Контент страниц -->
-  <div class="content">
-    
-    <!-- 1. ЗАДАНИЯ -->
-    <div id="page-tasks" class="page active">
-      <h1 class="page-title">Tasks</h1>
-      <p class="page-subtitle">Complete tasks and earn rewards</p>
-
-      <div class="card task-card">
-        <div class="task-left">
-          <div class="task-icon">
-            <i class="fa-paper-plane"></i>
-          </div>
-          <div class="task-details">
-            <div class="task-title">Join Telegram Channel</div>
-            <div class="task-sub">Join channel to earn reward</div>
-            <div class="reward-badge">+$2.00 <i class="fa-solid fa-coins"></i></div>
-          </div>
-        </div>
-        <button class="btn-action" id="taskBtn" onclick="completeTask()">Join</button>
+  <div class="layer" id="reg-phone" style="transform:translateX(100%)">
+    <div class="status"><div id="clock1">01:09</div><div class="right">📶 🛜 <span class="battery">100</span></div></div>
+    <div class="reg-header"><button class="back-btn" onclick="goTo('reg-welcome')">←</button></div>
+    <div class="reg-body">
+      <div class="reg-title">Ваш номер телефона</div>
+      <div class="reg-sub">Мы отправим вам код подтверждения по SMS. Никто не увидит ваш номер, кроме контактов, которым вы разрешили.</div>
+      <div class="phone-row">
+        <div class="country-select">🇷🇺 +7</div>
+        <input class="input-pill" id="phoneInput" type="tel" placeholder="999 999-99-99" maxlength="15" oninput="validatePhone()">
       </div>
-    </div>
-
-    <!-- 2. РЕФЕРАЛЫ -->
-    <div id="page-refer" class="page">
-      <h1 class="page-title">Refer & Earn</h1>
-      <p class="page-subtitle">Invite friends and earn more rewards</p>
-
-      <div class="card ref-reward-box">
-        <div class="ref-reward-title">Per Refer Reward</div>
-        <div class="ref-reward-amount">$2.00 <i class="fa-solid fa-coins currency-icon"></i></div>
-        <p style="font-size: 13px; color: var(--text-sub);">You earn $2.00 for every friend you invite.</p>
-
-        <div class="invite-link-box">
-          <input type="text" class="invite-input" id="refLink" value="https://t.me/Kokosroboty_bot?start=123456" readonly>
-          <button class="btn-copy" onclick="copyLink()"><i class="fa-regular fa-copy"></i></button>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-val" id="totalRefs">0</div>
-            <div class="stat-lbl">Total Referrals</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-val" id="activeRefs">0</div>
-            <div class="stat-lbl">Active Referrals</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-val" id="totalEarned">$0.00</div>
-            <div class="stat-lbl">Total Earned</div>
-          </div>
-        </div>
+      <div class="reg-footer">
+        <button class="btn-primary" id="phoneBtn" disabled onclick="sendCode()">Далее</button>
       </div>
-    </div>
-
-    <!-- 3. ВЫПЛАТЫ -->
-    <div id="page-withdraw" class="page">
-      <h1 class="page-title">Withdraw</h1>
-      <p class="page-subtitle">Transfer your earnings to your wallet</p>
-
-      <div class="card">
-        <div class="form-group">
-          <label>Payment Method</label>
-          <input type="text" class="form-input" value="USDT (TRC20)" readonly>
-        </div>
-        <div class="form-group">
-          <label>Wallet Address</label>
-          <input type="text" class="form-input" id="walletInput" placeholder="Enter your wallet address">
-        </div>
-        <div class="form-group">
-          <label>Amount ($)</label>
-          <input type="number" class="form-input" id="amountInput" placeholder="Enter amount">
-        </div>
-        <button class="btn-submit" onclick="requestWithdraw()">Withdraw</button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Нижняя навигация -->
-  <div class="nav-bar">
-    <div class="nav-item active" onclick="switchTab('tasks', this)">
-      <i class="fa-solid fa-list-check"></i>
-      <span>Tasks</span>
-    </div>
-    <div class="nav-item" onclick="switchTab('refer', this)">
-      <i class="fa-solid fa-user-group"></i>
-      <span>Refer</span>
-    </div>
-    <div class="nav-item" onclick="switchTab('withdraw', this)">
-      <i class="fa-solid fa-wallet"></i>
-      <span>Withdraw</span>
     </div>
   </div>
 
-  <script>
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
+  <div class="layer" id="reg-code" style="transform:translateX(100%)">
+    <div class="status"><div id="clock2">01:09</div><div class="right">📶 🛜 <span class="battery">100</span></div></div>
+    <div class="reg-header"><button class="back-btn" onclick="goTo('reg-phone')">←</button></div>
+    <div class="reg-body">
+      <div class="reg-title center-sub" style="text-align:center">Введите код</div>
+      <div class="reg-sub center-sub" id="codeSubtitle">Код отправлен на номер +7 ...</div>
+      <div class="code-boxes">
+        <input class="code-box" maxlength="1" inputmode="numeric">
+        <input class="code-box" maxlength="1" inputmode="numeric">
+        <input class="code-box" maxlength="1" inputmode="numeric">
+        <input class="code-box" maxlength="1" inputmode="numeric">
+      </div>
+      <button class="resend" id="resendBtn" disabled onclick="resendCode()">Отправить код повторно (0:30)</button>
+      <div class="reg-footer" style="text-align:center" id="codeSpinner"></div>
+    </div>
+  </div>
 
-    const channelLink = "https://t.me/+5iLuHR-4a2sxZTEy";
-    const botUsername = "Kokosroboty_bot";
-    
-    let userId = 'guest';
-    if (tg?.initDataUnsafe?.user) {
-      const user = tg.initDataUnsafe.user;
-      userId = user.id;
-      document.getElementById('userName').innerText = user.first_name || "User";
-      document.getElementById('refLink').value = `https://t.me/${botUsername}?start=${user.id}`;
-    }
+  <div class="layer" id="reg-profile" style="transform:translateX(100%)">
+    <div class="status"><div id="clock3">01:09</div><div class="right">📶 🛜 <span class="battery">100</span></div></div>
+    <div class="reg-body">
+      <div class="reg-title" style="text-align:center">Расскажите о себе</div>
+      <div class="reg-sub" style="text-align:center">Добавьте имя и фото профиля — это поможет друзьям узнать вас</div>
+      <div class="avatar-pick" id="regAvatar" onclick="cycleAvatar()">🐮<div class="cam">📷</div></div>
+      <div class="avatar-hint">Нажмите, чтобы выбрать аватар</div>
+      <div class="reg-field"><input id="regName" type="text" placeholder="Имя" oninput="validateName()"></div>
+      <div class="reg-field"><input id="regUsername" type="text" placeholder="@ имя_пользователя (необязательно)"></div>
+      <div class="reg-footer">
+        <button class="btn-primary" id="startBtn" disabled onclick="finishRegistration()">Начать общение</button>
+      </div>
+    </div>
+  </div>
 
-    const storageKeyTask = `kokos_task_done_${userId}`;
+  <!-- ===================== MAIN APP ===================== -->
+  <div class="layer hidden" id="app">
 
-    // Читаем рефералов из ссылки от бота
-    const urlParams = new URLSearchParams(window.location.search);
-    const botRefs = urlParams.has('refs') ? parseInt(urlParams.get('refs')) : 0;
+    <!-- CHATS TAB -->
+    <div class="tab-panel active" id="tab-chats">
+      <div class="status"><div id="clockChats">01:09</div><div class="right">📶 🛜 <span class="battery">100</span></div></div>
+      <div class="topbar">
+        <button class="icon-btn" onclick="alert('Меню')">•••</button>
+        <button class="icon-btn" onclick="openNewChatModal()">+</button>
+      </div>
+      <div class="page-title">Чаты</div>
+      <div class="search-bar"><span>🔍</span><input id="chatSearch" type="text" placeholder="Поиск" oninput="renderChats()"><span>🎤</span></div>
+      <div class="archive-row"><div>🗄️</div><div style="flex:1">Архив</div><div>2</div><div>›</div></div>
+      <div class="divider"></div>
+      <div class="scroll" id="chatListWrap"></div>
+      <div id="bottomNavChats"></div>
+    </div>
 
-    // Считаем реферальный доход
-    const refEarnings = botRefs * 2.0;
+    <!-- CONTACTS TAB -->
+    <div class="tab-panel" id="tab-contacts">
+      <div class="status"><div class="clock">01:09</div><div class="right">📶 🛜 <span class="battery">100</span></div></div>
+      <div class="topbar"><div></div><button class="icon-btn" onclick="openNewContactModal()">+</button></div>
+      <div class="page-title">Контакты</div>
+      <div class="search-bar"><span>🔍</span><input id="contactSearch" type="text" placeholder="Поиск" oninput="renderContacts()"><span></span></div>
+      <div class="scroll" id="contactListWrap"></div>
+      <div id="bottomNavContacts"></div>
+    </div>
 
-    // Проверяем выполнение задания из памяти
-    let taskEarnings = 0.0;
-    let isTaskDone = localStorage.getItem(storageKeyTask) === 'true';
-    
-    if (isTaskDone) {
-      taskEarnings = 2.0;
-      const btn = document.getElementById('taskBtn');
-      btn.innerText = "Done";
-      btn.classList.add('done');
-    }
-
-    // Итоговый баланс (Рефералы + Задания)
-    let totalBalance = refEarnings + taskEarnings;
-
-    // Обновляем интерфейс
-    document.getElementById('totalRefs').innerText = botRefs;
-    document.getElementById('activeRefs').innerText = botRefs;
-    document.getElementById('totalEarned').innerText = '$' + refEarnings.toFixed(2);
-    document.getElementById('userBalance').innerText = totalBalance.toFixed(2);
-
-    function showNotification(title, message, type = 'success') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-
-      let iconClass = 'fa-check';
-      if (type === 'error') iconClass = 'fa-xmark';
-      if (type === 'warning') iconClass = 'fa-exclamation';
-
-      toast.innerHTML = `
-        <div class="toast-icon">
-          <i class="fa-solid ${iconClass}"></i>
+    <!-- PROFILE (Вы) TAB -->
+    <div class="tab-panel" id="tab-profile">
+      <div class="status"><div class="clock">01:09</div><div class="right">📶 🛜 <span class="battery">100</span></div></div>
+      <div class="topbar"><div></div><div></div></div>
+      <div class="scroll">
+        <div class="profile-card">
+          <div class="avatar" id="profileAvatarBig">🐮</div>
+          <div class="pname" id="profileName">Test</div>
+          <div class="puser" id="profileUsername">@пользователь</div>
+          <div class="puser" id="profileMeta" style="margin-top:4px"></div>
         </div>
-        <div class="toast-content">
-          <div class="toast-title">${title}</div>
-          <div class="toast-message">${message}</div>
+        <div class="profile-actions">
+          <button class="action-row" onclick="openEditProfile()">✏️ <span>Редактировать профиль</span><span class="chev">›</span></button>
+          <button class="action-row" onclick="switchTab('settings')">⚙️ <span>Настройки</span><span class="chev">›</span></button>
+          <button class="action-row" onclick="switchTab('chats');openChat(3)">⭐ <span>Избранное</span><span class="chev">›</span></button>
         </div>
-      `;
+      </div>
+      <div id="bottomNavProfile"></div>
+    </div>
 
-      container.appendChild(toast);
+    <!-- SETTINGS TAB -->
+    <div class="tab-panel" id="tab-settings">
+      <div class="status"><div class="clock">01:09</div><div class="right">📶 🛜 <span class="battery">100</span></div></div>
+      <div class="page-title">Настройки</div>
+      <div class="scroll">
+        <div class="settings-group">
+          <div class="settings-row"><div>🌙</div><div class="lbl">Тёмная тема</div><button class="switch on" id="themeSwitch" onclick="toggleTheme()"><div class="knob"></div></button></div>
+          <div class="settings-row"><div>🔔</div><div class="lbl">Уведомления</div><button class="switch on" id="notifSwitch" onclick="toggleSwitch(this)"><div class="knob"></div></button></div>
+        </div>
+        <div class="settings-group">
+          <div class="settings-row" onclick="alert('Конфиденциальность и безопасность')"><div>🔒</div><div class="lbl">Конфиденциальность</div><div class="val">›</div></div>
+          <div class="settings-row" onclick="alert('Данные и память: 128 МБ')"><div>💾</div><div class="lbl">Данные и память</div><div class="val">›</div></div>
+          <div class="settings-row" onclick="alert('Язык интерфейса: Русский')"><div>🌐</div><div class="lbl">Язык</div><div class="val">Русский ›</div></div>
+        </div>
+        <button class="logout-btn" onclick="logout()">Выйти из аккаунта</button>
+      </div>
+      <div id="bottomNavSettings"></div>
+    </div>
 
-      setTimeout(() => toast.classList.add('show'), 10);
-      setTimeout(() => {
-        toast.classList.remove('show');
-        toast.classList.add('hide');
-        setTimeout(() => toast.remove(), 350);
-      }, 3500);
-    }
+    <!-- CALLS TAB -->
+    <div class="tab-panel" id="tab-calls">
+      <div class="status"><div class="clock">01:09</div><div class="right">📶 🛜 <span class="battery">100</span></div></div>
+      <div class="page-title">Звонки</div>
+      <div class="segmented">
+        <button class="seg-opt active" onclick="setCallFilter('all',this)">Все</button>
+        <button class="seg-opt" onclick="setCallFilter('missed',this)">Пропущенные</button>
+      </div>
+      <div class="scroll" id="callListWrap"></div>
+      <div id="bottomNavCalls"></div>
+    </div>
 
-    function switchTab(pageId, element) {
-      document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-      document.getElementById(`page-${pageId}`).classList.add('active');
-      element.classList.add('active');
-    }
+  </div>
 
-    function completeTask() {
-      const btn = document.getElementById('taskBtn');
-      if (btn.classList.contains('done')) return;
+  <!-- ===================== CHAT CONVERSATION OVERLAY ===================== -->
+  <div class="layer" id="chatView">
+    <div class="status"><div class="clock">01:09</div><div class="right">📶 🛜 <span class="battery">100</span></div></div>
+    <div class="chat-header">
+      <button class="back-btn" onclick="closeChat()">←</button>
+      <div class="avatar" id="chatHeaderAvatar">🐮</div>
+      <div>
+        <div class="hname" id="chatHeaderName">Test</div>
+        <div class="hstatus" id="chatHeaderStatus">в сети</div>
+      </div>
+    </div>
+    <div class="messages" id="messagesWrap"></div>
+    <div class="input-bar">
+      <input id="msgInput" type="text" placeholder="Сообщение" onkeydown="if(event.key==='Enter')sendMessage()">
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
 
-      if (tg && tg.openTelegramLink) {
-        tg.openTelegramLink(channelLink);
-      } else {
-        window.open(channelLink, '_blank');
-      }
+  <!-- ===================== PROFILE EDIT OVERLAY ===================== -->
+  <div class="layer" id="editProfileView">
+    <div class="ep-status-wrap">
+      <div class="status"><div class="clock">01:09</div><div class="right">📶 🛜 <span class="battery">59</span></div></div>
+      <div class="nav-bar">
+        <button class="nav-btn" onclick="closeEditProfile(false)">Отмена</button>
+        <div class="nav-title">Редактировать пр...</div>
+        <button class="nav-btn done" onclick="closeEditProfile(true)">Готово</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <div class="avatar-wrap">
+        <div class="avatar-circle" id="epAvatar" onclick="openAvatarEdit()">🐮<div class="cam-badge">📷</div></div>
+        <button class="choose-photo" onclick="openAvatarEdit()">Выбрать фото</button>
+      </div>
+      <div class="field-group">
+        <div class="field"><input id="epName" type="text" value="Test"></div>
+        <div class="field"><input id="epBio" type="text" placeholder="О себе"></div>
+      </div>
+      <div class="field-group"><div class="field"><input id="epUsername" type="text" placeholder="@ имя_пользователя"></div></div>
+      <div class="field-group"><div class="field"><div class="field-icon icon-phone">📞</div><input id="epPhone" type="text" value="+7 999 999-99-99"></div></div>
+      <div class="field-group">
+        <div class="field" style="cursor:pointer" onclick="openBirthdayModal()"><div class="field-icon icon-cal">📅</div><div class="field-label">День рождения</div><div class="field-value" id="epBirthdayValue">Не указан ⌄</div></div>
+        <div class="field" style="cursor:pointer" onclick="openGenderModal()"><div class="field-icon icon-gender">👤</div><div class="field-label">Пол</div><div class="field-value accent" id="epGenderValue">Не указан ⇕</div></div>
+      </div>
+    </div>
+  </div>
 
-      btn.innerText = "Checking...";
-      setTimeout(() => {
-        localStorage.setItem(storageKeyTask, 'true');
-        
-        totalBalance += 2.0;
-        document.getElementById('userBalance').innerText = totalBalance.toFixed(2);
-        
-        btn.innerText = "Done";
-        btn.classList.add('done');
-        
-        showNotification("Успешно!", "Задание выполнено! Вам начислено +$2.00", "success");
-      }, 3000);
-    }
+  <!-- ===================== AVATAR EDIT OVERLAY ===================== -->
+  <div class="layer" id="avatarEditView">
+    <div class="status"><div class="clock">01:11</div><div class="right">🛜 <span class="battery">58</span></div></div>
+    <div class="top-controls">
+      <button class="round-btn" onclick="closeAvatarEdit()">✕</button>
+      <div class="toggle-group"><button class="toggle-opt active" data-t>Аватар</button><button class="toggle-opt" data-t>Постер</button></div>
+      <button class="round-btn confirm" onclick="closeAvatarEdit()">✓</button>
+    </div>
+    <div class="big-avatar-wrap"><div class="big-avatar" id="bigAvatar">🐮</div></div>
+    <button class="customize-btn" onclick="cycleBigAvatar()">Настроить</button>
+    <div class="section-title">Фото</div>
+    <div class="field-group2" style="margin-top:0">
+      <div class="field2"><input id="epBio2" type="text" placeholder="О себе"></div>
+      <div class="field2"><input id="epName2" type="text" value="Test"></div>
+      <div class="field2"><input type="text" placeholder="Фамилия (не обязательно)"></div>
+    </div>
+  </div>
 
-    function copyLink() {
-      const copyText = document.getElementById("refLink");
-      copyText.select();
-      navigator.clipboard.writeText(copyText.value);
-      showNotification("Ссылка скопирована", "Отправьте её другу, чтобы получить бонус!", "success");
-    }
+  <!-- ===================== MODAL ===================== -->
+  <div class="modal-backdrop" id="modalBackdrop" onclick="if(event.target===this)closeModal()">
+    <div class="modal-sheet">
+      <div class="modal-title" id="modalTitle">Новый чат</div>
+      <input class="modal-input" id="modalInput1" type="text" placeholder="Имя">
+      <input class="modal-input hidden" id="modalInput2" type="text" placeholder="Телефон">
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeModal()">Отмена</button>
+        <button class="modal-btn ok" id="modalOkBtn" onclick="modalConfirm()">Создать</button>
+      </div>
+    </div>
+  </div>
+  <!-- ===================== BIRTHDAY MODAL ===================== -->
+  <div class="modal-backdrop" id="birthdayModalBackdrop" onclick="if(event.target===this)closeBirthdayModal(false)">
+    <div class="modal-sheet">
+      <div class="modal-title">День рождения</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <select class="modal-input" id="bdDay" style="flex:1"></select>
+        <select class="modal-input" id="bdMonth" style="flex:1.4"></select>
+        <select class="modal-input" id="bdYear" style="flex:1"></select>
+      </div>
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeBirthdayModal(false)">Отмена</button>
+        <button class="modal-btn ok" onclick="closeBirthdayModal(true)">Готово</button>
+      </div>
+    </div>
+  </div>
 
-    function requestWithdraw() {
-      const amount = parseFloat(document.getElementById('amountInput').value);
-      const wallet = document.getElementById('walletInput').value;
+  <!-- ===================== GENDER MODAL ===================== -->
+  <div class="modal-backdrop" id="genderModalBackdrop" onclick="if(event.target===this)closeGenderModal(false)">
+    <div class="modal-sheet">
+      <div class="modal-title">Пол</div>
+      <div id="genderOptions" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeGenderModal(false)">Отмена</button>
+        <button class="modal-btn ok" onclick="closeGenderModal(true)">Готово</button>
+      </div>
+    </div>
+  </div>
 
-      if (!wallet) {
-        showNotification("Ошибка", "Укажите адрес кошелька USDT!", "error");
-        return;
-      }
+</div>
 
-      if (isNaN(amount) || amount < 10) {
-        showNotification("Ограничение", "Минимальная сумма вывода составляет $10.00", "warning");
-        return;
-      }
+<script>
+/* ---------------- RESPONSIVE SCALING (desktop mockup) ---------------- */
+function fitDeviceScale(){
+  const margin = 48;
+  const scale = Math.min(1, (window.innerHeight - margin) / 844, (window.innerWidth - margin) / 390);
+  document.documentElement.style.setProperty('--app-scale', Math.max(scale, 0.4));
+}
+fitDeviceScale();
+window.addEventListener('resize', fitDeviceScale);
+window.addEventListener('orientationchange', fitDeviceScale);
 
-      if (amount > totalBalance) {
-        showNotification("Ошибка вывода", "Недостаточно средств на вашем балансе!", "error");
-        return;
-      }
+/* ---------------- STATE ---------------- */
+const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const AVATARS = ['🐮','🐱','🐼','🦊','🐨','🐸','🐰','🦁'];
+let state = {
+  user: { name:'', username:'', phone:'', avatarIdx:0, birthday:null, gender:null },
+  nextChatId: 4,
+  currentChatId: null,
+  chats: [
+    { id:1, name:'Test', avatar:'🐮', warm:true, autoReply:true, online:true,
+      messages:[{from:'them', text:'Ку', time:'вчера'}] },
+    { id:2, name:'SlimChat', avatar:'💬', warm:false, autoReply:false, online:false, system:true,
+      messages:[{from:'system', text:'Вы удалили локализацию «Test» (OID:LB...)'}] },
+    { id:3, name:'Избранное', avatar:'⭐', star:true, autoReply:false, online:false,
+      messages:[{from:'me', text:'🎅 Стикер', time:'05.07'}] },
+  ],
+  contacts: [ {name:'Test', phone:'+7 999 999-99-99'} ],
+  calls: [
+    {name:'Test', type:'out', time:'вчера, 13:04'},
+    {name:'MAKSLIMUS', type:'missed', time:'06.07, 21:12'},
+    {name:'SlimChat', type:'in', time:'05.07, 09:40'},
+  ]
+};
+const AUTO_REPLIES = ['Ку 👋','Ага, понял','Окей!','Ахах, точно 😄','Погнали','Норм, го','Сча гляну','👍'];
 
-      showNotification("Заявка создана", "Ваш запрос на вывод средств отправлен на обработку!", "success");
-    }
-  </script>
+/* ---------------- NAV HELPERS ---------------- */
+function goTo(id){
+  document.querySelectorAll('#reg-welcome,#reg-phone,#reg-code,#reg-profile').forEach(el=>{
+    el.style.transform = 'translateX(100%)';
+    el.classList.remove('on-screen');
+  });
+  const target = document.getElementById(id);
+  target.style.transform = 'translateX(0)';
+  target.classList.add('on-screen');
+}
+
+/* ---------------- CLOCK ---------------- */
+function updateClocks(){
+  const t = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  document.querySelectorAll('#clock1,#clock2,#clock3,#clockChats,.clock').forEach(el=>el.textContent=t);
+}
+updateClocks(); setInterval(updateClocks, 20000);
+
+/* ---------------- REGISTRATION LOGIC ---------------- */
+function validatePhone(){
+  const v = document.getElementById('phoneInput').value.replace(/\D/g,'');
+  document.getElementById('phoneBtn').disabled = v.length < 10;
+}
+function sendCode(){
+  const phoneDigits = document.getElementById('phoneInput').value.replace(/\D/g,'');
+  state.user.phone = '+7 ' + phoneDigits;
+  document.getElementById('codeSubtitle').textContent = 'Код отправлен на номер ' + state.user.phone;
+  goTo('reg-code');
+  setupCodeBoxes();
+  startResendTimer();
+}
+function setupCodeBoxes(){
+  const boxes = document.querySelectorAll('.code-box');
+  boxes.forEach(b=>{ b.value=''; b.classList.remove('filled'); });
+  boxes[0].focus();
+  boxes.forEach((box,i)=>{
+    box.oninput = ()=>{
+      box.value = box.value.replace(/\D/g,'').slice(0,1);
+      box.classList.toggle('filled', box.value.length===1);
+      if(box.value && i<boxes.length-1) boxes[i+1].focus();
+      if([...boxes].every(b=>b.value.length===1)) verifyCode();
+    };
+    box.onkeydown = (e)=>{
+      if(e.key==='Backspace' && !box.value && i>0) boxes[i-1].focus();
+    };
+  });
+}
+function verifyCode(){
+  document.getElementById('codeSpinner').innerHTML = '<div class="spinner"></div>';
+  setTimeout(()=>{
+    document.getElementById('codeSpinner').innerHTML = '';
+    goTo('reg-profile');
+  }, 700);
+}
+let resendInterval;
+function startResendTimer(){
+  let s = 30;
+  const btn = document.getElementById('resendBtn');
+  btn.disabled = true;
+  clearInterval(resendInterval);
+  resendInterval = setInterval(()=>{
+    s--;
+    btn.textContent = `Отправить код повторно (0:${s.toString().padStart(2,'0')})`;
+    if(s<=0){ clearInterval(resendInterval); btn.disabled=false; btn.textContent='Отправить код повторно'; }
+  },1000);
+}
+function resendCode(){ startResendTimer(); }
+function cycleAvatar(){
+  state.user.avatarIdx = (state.user.avatarIdx+1) % AVATARS.length;
+  document.getElementById('regAvatar').firstChild.textContent = AVATARS[state.user.avatarIdx];
+}
+function validateName(){
+  document.getElementById('startBtn').disabled = document.getElementById('regName').value.trim().length===0;
+}
+function finishRegistration(){
+  state.user.name = document.getElementById('regName').value.trim();
+  state.user.username = document.getElementById('regUsername').value.trim() || ('@' + state.user.name.toLowerCase().replace(/\s+/g,''));
+  const rp = document.getElementById('reg-profile');
+  rp.style.transform='translateX(-100%)';
+  rp.classList.remove('on-screen');
+  const app = document.getElementById('app');
+  app.classList.remove('hidden');
+  app.classList.add('on-screen');
+  renderBottomNavs();
+  renderProfileTab();
+  renderChats();
+  renderContacts();
+  renderCalls();
+}
+
+/* ---------------- BOTTOM NAV ---------------- */
+const NAV_HTML = (active)=>`
+  <div class="bottom-nav">
+    <button class="nav-item ${active==='chats'?'active':''}" onclick="switchTab('chats')"><div class="nav-icon">💬</div>Чаты</button>
+    <button class="nav-item ${active==='contacts'?'active':''}" onclick="switchTab('contacts')"><div class="nav-icon">👥</div>Контакты</button>
+    <button class="nav-item ${active==='profile'?'active':''}" onclick="switchTab('profile')"><div class="nav-icon">👤</div>Вы</button>
+    <button class="nav-item ${active==='settings'?'active':''}" onclick="switchTab('settings')"><div class="nav-icon">⚙️</div>Настройки</button>
+    <button class="nav-item ${active==='calls'?'active':''}" onclick="switchTab('calls')"><div class="nav-icon">📞</div>Звонки</button>
+  </div>`;
+function renderBottomNavs(){
+  document.getElementById('bottomNavChats').innerHTML = NAV_HTML('chats');
+  document.getElementById('bottomNavContacts').innerHTML = NAV_HTML('contacts');
+  document.getElementById('bottomNavProfile').innerHTML = NAV_HTML('profile');
+  document.getElementById('bottomNavSettings').innerHTML = NAV_HTML('settings');
+  document.getElementById('bottomNavCalls').innerHTML = NAV_HTML('calls');
+}
+function switchTab(name){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+/* ---------------- CHATS ---------------- */
+function chatAvatarClass(c){ return c.warm ? 'warm' : (c.star ? 'star' : ''); }
+function lastMsgPreview(c){
+  const m = c.messages[c.messages.length-1];
+  if(!m) return '';
+  if(m.from==='system') return m.text;
+  const prefix = m.from==='me' ? '<span class="check">✓</span> Вы: ' : '';
+  return prefix + m.text;
+}
+function lastMsgTime(c){
+  const m = c.messages[c.messages.length-1];
+  return (m && m.time) ? m.time : 'сейчас';
+}
+function renderChats(){
+  const q = (document.getElementById('chatSearch').value||'').toLowerCase();
+  const wrap = document.getElementById('chatListWrap');
+  const list = state.chats.filter(c=>c.name.toLowerCase().includes(q));
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty-state"><div class="big">🔍</div>Ничего не найдено</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(c=>`
+    <div class="chat-item" onclick="openChat(${c.id})">
+      <div class="avatar ${chatAvatarClass(c)}">${c.avatar}</div>
+      <div class="chat-content">
+        <div class="chat-top"><div class="chat-name">${c.name}</div><div class="chat-time">${lastMsgTime(c)}</div></div>
+        <div class="chat-preview">${lastMsgPreview(c)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function openChat(id){
+  state.currentChatId = id;
+  const c = state.chats.find(x=>x.id===id);
+  document.getElementById('chatHeaderAvatar').textContent = c.avatar;
+  document.getElementById('chatHeaderAvatar').className = 'avatar ' + chatAvatarClass(c);
+  document.getElementById('chatHeaderName').textContent = c.name;
+  document.getElementById('chatHeaderStatus').textContent = c.system ? 'канал' : (c.star ? 'заметки' : (c.online ? 'в сети' : 'был(а) недавно'));
+  renderMessages();
+  const cv = document.getElementById('chatView');
+  cv.style.transform = 'translateX(0)';
+  cv.classList.add('on-screen');
+  setTimeout(()=>document.getElementById('msgInput').focus(), 300);
+}
+function closeChat(){
+  const cv = document.getElementById('chatView');
+  cv.style.transform = 'translateX(100%)';
+  cv.classList.remove('on-screen');
+  state.currentChatId = null;
+  renderChats();
+}
+function renderMessages(){
+  const c = state.chats.find(x=>x.id===state.currentChatId);
+  const wrap = document.getElementById('messagesWrap');
+  wrap.innerHTML = c.messages.map(m=>{
+    if(m.from==='system') return `<div class="msg system">${m.text}</div>`;
+    return `<div class="msg ${m.from}">${m.text}${m.time?`<div class="mtime">${m.time}</div>`:''}</div>`;
+  }).join('');
+  wrap.scrollTop = wrap.scrollHeight;
+}
+function nowTime(){ return new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }
+function sendMessage(){
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if(!text) return;
+  const c = state.chats.find(x=>x.id===state.currentChatId);
+  c.messages.push({from:'me', text, time: nowTime()});
+  input.value='';
+  renderMessages();
+  if(c.autoReply){
+    const wrap = document.getElementById('messagesWrap');
+    const typing = document.createElement('div');
+    typing.className = 'typing';
+    typing.textContent = c.name + ' печатает...';
+    wrap.appendChild(typing);
+    wrap.scrollTop = wrap.scrollHeight;
+    setTimeout(()=>{
+      typing.remove();
+      const reply = AUTO_REPLIES[Math.floor(Math.random()*AUTO_REPLIES.length)];
+      c.messages.push({from:'them', text: reply, time: nowTime()});
+      renderMessages();
+    }, 1100 + Math.random()*700);
+  }
+}
+
+/* ---------------- CONTACTS ---------------- */
+function renderContacts(){
+  const q = (document.getElementById('contactSearch').value||'').toLowerCase();
+  const wrap = document.getElementById('contactListWrap');
+  const list = state.contacts.filter(c=>c.name.toLowerCase().includes(q));
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty-state"><div class="big">👥</div>Нет контактов</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(c=>`
+    <div class="list-row" style="cursor:pointer" onclick="startChatWithContact('${c.name.replace(/'/g,"")}')">
+      <div class="avatar warm" style="width:44px;height:44px;font-size:20px">${c.name[0].toUpperCase()}</div>
+      <div class="meta"><div class="name">${c.name}</div><div class="sub">${c.phone}</div></div>
+    </div>`).join('');
+}
+function startChatWithContact(name){
+  let c = state.chats.find(x=>x.name===name);
+  if(!c){
+    c = {id: state.nextChatId++, name, avatar: name[0].toUpperCase(), warm:true, autoReply:true, online:Math.random()>0.5, messages:[]};
+    state.chats.unshift(c);
+  }
+  switchTab('chats');
+  renderChats();
+  openChat(c.id);
+}
+
+/* ---------------- CALLS ---------------- */
+let callFilter = 'all';
+function setCallFilter(f, btn){
+  callFilter = f;
+  document.querySelectorAll('.seg-opt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCalls();
+}
+function renderCalls(){
+  const wrap = document.getElementById('callListWrap');
+  const list = state.calls.filter(c=> callFilter==='all' || c.type==='missed');
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty-state"><div class="big">📞</div>Нет звонков</div>`;
+    return;
+  }
+  const iconFor = t => t==='missed' ? '<span class="call-icon missed">↙</span>' : (t==='in' ? '<span class="call-icon in">↙</span>' : '<span class="call-icon out">↗</span>');
+  wrap.innerHTML = list.map(c=>`
+    <div class="list-row">
+      <div class="avatar" style="width:44px;height:44px;font-size:20px">${c.name[0].toUpperCase()}</div>
+      <div class="meta"><div class="name" style="${c.type==='missed'?'color:#ff453a':''}">${c.name}</div><div class="sub">${iconFor(c.type)} ${c.time}</div></div>
+      <div style="font-size:18px;color:var(--accent)">📞</div>
+    </div>`).join('');
+}
+
+/* ---------------- PROFILE TAB ---------------- */
+function renderProfileTab(){
+  document.getElementById('profileAvatarBig').textContent = AVATARS[state.user.avatarIdx];
+  document.getElementById('profileName').textContent = state.user.name || 'Пользователь';
+  document.getElementById('profileUsername').textContent = state.user.username || '@пользователь';
+  const parts = [];
+  if(state.user.birthday) parts.push(`${state.user.birthday.day} ${MONTHS[state.user.birthday.month]} ${state.user.birthday.year}`);
+  if(state.user.gender) parts.push(state.user.gender==='male'?'Мужской':(state.user.gender==='female'?'Женский':''));
+  document.getElementById('profileMeta').textContent = parts.filter(Boolean).join(' · ');
+}
+
+/* ---------------- SETTINGS ---------------- */
+function toggleSwitch(el){ el.classList.toggle('on'); }
+function toggleTheme(){
+  const el = document.getElementById('themeSwitch');
+  el.classList.toggle('on');
+  const dark = el.classList.contains('on');
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+}
+function logout(){
+  if(!confirm('Выйти из аккаунта? Все данные сессии будут сброшены.')) return;
+  const app = document.getElementById('app');
+  app.classList.add('hidden');
+  app.classList.remove('on-screen');
+  document.getElementById('phoneInput').value='';
+  document.getElementById('regName').value='';
+  document.getElementById('regUsername').value='';
+  document.getElementById('phoneBtn').disabled = true;
+  document.getElementById('startBtn').disabled = true;
+  goTo('reg-welcome');
+}
+
+/* ---------------- NEW CHAT / CONTACT MODAL ---------------- */
+let modalMode = null;
+function openNewChatModal(){
+  modalMode = 'chat';
+  document.getElementById('modalTitle').textContent = 'Новый чат';
+  document.getElementById('modalInput1').placeholder = 'Имя контакта';
+  document.getElementById('modalInput1').value='';
+  document.getElementById('modalInput2').classList.add('hidden');
+  document.getElementById('modalOkBtn').textContent = 'Создать';
+  document.getElementById('modalBackdrop').classList.add('show');
+  setTimeout(()=>document.getElementById('modalInput1').focus(),300);
+}
+function openNewContactModal(){
+  modalMode = 'contact';
+  document.getElementById('modalTitle').textContent = 'Новый контакт';
+  document.getElementById('modalInput1').placeholder = 'Имя';
+  document.getElementById('modalInput1').value='';
+  document.getElementById('modalInput2').classList.remove('hidden');
+  document.getElementById('modalInput2').value='';
+  document.getElementById('modalOkBtn').textContent = 'Добавить';
+  document.getElementById('modalBackdrop').classList.add('show');
+  setTimeout(()=>document.getElementById('modalInput1').focus(),300);
+}
+function closeModal(){ document.getElementById('modalBackdrop').classList.remove('show'); }
+function modalConfirm(){
+  const name = document.getElementById('modalInput1').value.trim();
+  if(!name) return;
+  if(modalMode==='chat'){
+    closeModal();
+    startChatWithContact(name);
+  } else {
+    const phone = document.getElementById('modalInput2').value.trim() || '+7 ---';
+    state.contacts.push({name, phone});
+    closeModal();
+    renderContacts();
+  }
+}
+
+/* ---------------- PROFILE EDIT OVERLAYS ---------------- */
+function refreshEpFieldDisplays(){
+  const bd = state.user.birthday;
+  document.getElementById('epBirthdayValue').innerHTML = bd ? `${bd.day} ${MONTHS[bd.month]} ${bd.year} ⌄` : 'Не указан ⌄';
+  const g = state.user.gender;
+  document.getElementById('epGenderValue').innerHTML = g ? (g==='male'?'Мужской ⇕':(g==='female'?'Женский ⇕':'Не указан ⇕')) : 'Не указан ⇕';
+}
+function openEditProfile(){
+  document.getElementById('epName').value = state.user.name;
+  document.getElementById('epUsername').value = state.user.username;
+  document.getElementById('epPhone').value = state.user.phone || '+7 ---';
+  document.getElementById('epAvatar').firstChild.textContent = AVATARS[state.user.avatarIdx];
+  refreshEpFieldDisplays();
+  const ep = document.getElementById('editProfileView');
+  ep.style.transform = 'translateX(0)';
+  ep.classList.add('on-screen');
+}
+function closeEditProfile(save){
+  if(save){
+    state.user.name = document.getElementById('epName').value.trim() || state.user.name;
+    state.user.username = document.getElementById('epUsername').value.trim() || state.user.username;
+    renderProfileTab();
+  }
+  const ep = document.getElementById('editProfileView');
+  ep.style.transform = 'translateX(100%)';
+  ep.classList.remove('on-screen');
+  if(save){ switchTab('chats'); renderChats(); }
+}
+function openAvatarEdit(){
+  document.getElementById('bigAvatar').textContent = AVATARS[state.user.avatarIdx];
+  document.getElementById('epName2').value = document.getElementById('epName').value;
+  const av = document.getElementById('avatarEditView');
+  av.style.transform = 'translateY(0)';
+  av.classList.add('on-screen');
+}
+function closeAvatarEdit(){
+  document.getElementById('epName').value = document.getElementById('epName2').value;
+  document.getElementById('epAvatar').firstChild.textContent = AVATARS[state.user.avatarIdx];
+  const av = document.getElementById('avatarEditView');
+  av.style.transform = 'translateY(100%)';
+  av.classList.remove('on-screen');
+}
+function cycleBigAvatar(){
+  state.user.avatarIdx = (state.user.avatarIdx+1) % AVATARS.length;
+  document.getElementById('bigAvatar').textContent = AVATARS[state.user.avatarIdx];
+}
+
+/* ---------------- BIRTHDAY MODAL ---------------- */
+function openBirthdayModal(){
+  const dayEl = document.getElementById('bdDay'), monthEl = document.getElementById('bdMonth'), yearEl = document.getElementById('bdYear');
+  if(!dayEl.options.length){
+    for(let d=1; d<=31; d++) dayEl.innerHTML += `<option value="${d}">${d}</option>`;
+    MONTHS.forEach((m,i)=> monthEl.innerHTML += `<option value="${i}">${m}</option>`);
+    const thisYear = new Date().getFullYear();
+    for(let y=thisYear; y>=thisYear-90; y--) yearEl.innerHTML += `<option value="${y}">${y}</option>`;
+  }
+  const bd = state.user.birthday;
+  dayEl.value = bd ? bd.day : 1;
+  monthEl.value = bd ? bd.month : 0;
+  yearEl.value = bd ? bd.year : (new Date().getFullYear()-20);
+  document.getElementById('birthdayModalBackdrop').classList.add('show');
+}
+function closeBirthdayModal(save){
+  if(save){
+    state.user.birthday = {
+      day: parseInt(document.getElementById('bdDay').value,10),
+      month: parseInt(document.getElementById('bdMonth').value,10),
+      year: parseInt(document.getElementById('bdYear').value,10)
+    };
+    refreshEpFieldDisplays();
+    renderProfileTab();
+  }
+  document.getElementById('birthdayModalBackdrop').classList.remove('show');
+}
+
+/* ---------------- GENDER MODAL ---------------- */
+let pendingGender = null;
+function openGenderModal(){
+  pendingGender = state.user.gender;
+  renderGenderOptions();
+  document.getElementById('genderModalBackdrop').classList.add('show');
+}
+function renderGenderOptions(){
+  const opts = [{v:'male',l:'Мужской'},{v:'female',l:'Женский'},{v:null,l:'Не указан'}];
+  document.getElementById('genderOptions').innerHTML = opts.map(o=>`
+    <button class="modal-btn" style="background:${pendingGender===o.v?'var(--accent)':'var(--bg4)'};color:${pendingGender===o.v?'#fff':'var(--text)'}" onclick="pendingGender=${o.v?`'${o.v}'`:null};renderGenderOptions()">${o.l}</button>
+  `).join('');
+}
+function closeGenderModal(save){
+  if(save){
+    state.user.gender = pendingGender;
+    refreshEpFieldDisplays();
+    renderProfileTab();
+  }
+  document.getElementById('genderModalBackdrop').classList.remove('show');
+}
+document.querySelectorAll('.toggle-opt').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.toggle-opt').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+</script>
 </body>
 </html>
